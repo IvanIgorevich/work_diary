@@ -1,14 +1,14 @@
 # diary
-Консольный дневник с записью в файл
+Console diary with file saving
 
-Для запуска введите в терминале из папки с программой:
+To run the program, enter the following command in the terminal from the program folder:
 ~~~
 $ ruby diary.rb
 ~~~
-Перевод строки - `Enter`, после него редактировать запись можно только в файле.
+Press `Enter` to create a new line. After that, editing is only possible in the file.
 
-Для сохранения файла напишите на новой строке `end` и нажмите `Enter`.
+To save the file, write `end` on a new line and press `Enter`.
 
-Файлы называются датой и временем сохранения. Один файл на один календарный день.
+Files are named by the date and time of the save. One file per calendar day.
 
-Файлы хранятся в папке с программой.
+Files are stored in the program folder.
