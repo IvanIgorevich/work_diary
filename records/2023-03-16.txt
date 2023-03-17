@@ -1,0 +1,12 @@
+
+
+08:02
+
+2023-03-15:
+1)#1487 not finish, this day 5h 32m, total 7h 57m
+2) #1302, Radio button for Selection Valuation Source = HC. Added stimulus values instead of hidden fields with targets.
+This day 20m, result 5h 2m
+3) Tests, 2h 17m, fixed monthly_kpi_controller_test.rb, added factory :real_estate_reports_monthly_kpi
+4) Documentation, some methods from text_utils.rb with chatGPT description.
+Added description of functionality #1302, how change as_is_value depending on the as_is_valuation_source
+------------------------------
