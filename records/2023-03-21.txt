@@ -1,0 +1,14 @@
+
+09:44
+
+2023-03-20:
+1) #1517, Add collapse/expand all tables to Operations page
+  Created Re__Operations__CollapseAllController
+  Added stimulus_controller & stimulus_target to section_for_with_button
+  When static value collapseButton true - all collapsed, button.textContent = 'Expand All', click->expandAll
+  When static value collapseButton false, button.textContent = 'Collapse All', click->collapseAll
+  All collapsed by default
+  This day 3h. 53m
+  Result 5h 10m, merge 1395
+2) Documentation, added weekly report
+------------------------------
