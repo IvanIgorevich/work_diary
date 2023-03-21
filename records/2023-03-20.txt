@@ -1,0 +1,20 @@
+
+11:56
+
+2023-03-17:
+1) #1487 Update sub menu format on Business Entities page
+  Added stimulus controller & selector for all types of Business Entities.
+  With turbo-stream main table change to selected entities.
+  If selected 1 entity, showed specific table for this entity
+  Maybe not finished, becouse paginate not working without refresh page
+  Fixed color in hovered links
+  This day 6h 10m, total 21h 9m, 10 files changed, +242 -52,
+2) #1517, started, this day 1h 7m
+3) Tests, fixed insurance_controller_test.rb, leads_controller_test.rb, syndicate_sales_controller_test.rb
+4) Documentation, this diary, fixed section_for_with_button
+------------------------------
+
+12:12
+
+test 0 arguments
+------------------------------
