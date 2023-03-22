@@ -1,0 +1,14 @@
+
+
+11:05
+
+2023-03-21:
+1) #1406 Add % to daily ops summary email table,
+  Added row upcoming_payments,
+  Added column % and formula for it 
+  Result 1h 2m, files changed 3, +20 -9
+2) #1051, started, this day 3h 32m
+3) Tests, tried to fix syndicate_sales_controller_test.rb#update
+4) Documentation,  fixed section_for_with_button, shared/numeric_cell
+   This diary, weekly documentation
+------------------------------
