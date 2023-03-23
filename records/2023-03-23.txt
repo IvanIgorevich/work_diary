@@ -1,0 +1,20 @@
+
+
+10:46
+
+2023-03-22:
+1) #1051, Loans that matured show 0 balance on CF page
+  Added opportunity to sum maturity.total if maturity.unpaid?
+  Rebuild local DB: RealEstate::DealUtils.build_all_cash_flow_summaries
+  this day 33m,
+  Result 4h 5m, files changed 1, +2 -2
+2) #878, started, this day 1h 26m
+3) Tests, fixed taxes_controller_test.rb
+4) Documentatin,
+  fixed section_for_with_button
+  added some methods to utils:
+    TextUtils.days_diff
+    TextUtils.num2fmt
+    TextUtils.type2word
+  this diary
+------------------------------
