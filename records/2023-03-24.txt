@@ -1,0 +1,25 @@
+
+
+08:44
+
+20223-03-22:
+1) #1050, started, this day 1h 17m
+2) #1405, TermSheet Exporter Change
+  Vue.js
+  Removed opportunity to download from Slack button,
+  Fixed tooltip
+  Result 26m
+  Files changed 1, +1 -2
+3) #685, Add monthly summary attachment to capital manager
+  Added opportunity to load file 'monthly_summary' in capital manager
+  It is new Common::DocumentType
+oaded, table cell replace by Hotwire to cell with download opportunity
+  This day 1h 14m
+  Result 28h 8m
+  Files changed 13, +229 -81
+4) #1395, some fixes, this day 10m
+5) Tests, fixed User factory, user_profiles_controller_test.rb
+6) Documentation, 
+  Added TextUtils.to_typeahead_json
+7) review #1417
+------------------------------
