@@ -1,0 +1,59 @@
+
+
+2023-03-27 - 2023-04-02
+
+1) #1487 Update sub menu format on Business Entities page
+  Added stimulus controller & selector for all types of Business Entities.
+  With turbo-stream main table change to selected entities.
+  If selected 1 entity, showed specific table for this entity
+  Maybe not finished, becouse paginate not working without refresh page
+  Fixed color in hovered links
+  Result 21h 9m
+  10 files changed, +242 -52,
+
+2) #1517, Add collapse/expand all tables to Operations page
+  Created Re__Operations__CollapseAllController
+  Added stimulus_controller & stimulus_target to section_for_with_button
+  When static value collapseButton true - all collapsed, button.textContent = 'Expand All', click->expandAll
+  When static value collapseButton false, button.textContent = 'Collapse All', click->collapseAll
+  All collapsed by default
+  Result 5h 10m,
+  5 files changed, +150 -50, because merge 1395 - no sure
+
+3) #1406 Add % to daily ops summary email table,
+  Added row upcoming_payments,
+  Added column % and formula for it 
+  Result 1h 2m,
+  3 files changed, +20 -9
+
+4) #1051, Loans that matured show 0 balance on CF page
+  Added opportunity to sum maturity.total if maturity.unpaid?
+  Rebuild local DB: RealEstate::DealUtils.build_all_cash_flow_summaries
+  Result 4h 5m,
+  1 files changed, +2 -2
+
+5) #1405, TermSheet Exporter Change
+  Vue.js
+  Removed opportunity to download from Slack button,
+  Fixed tooltip
+  Result 26m
+  1 files changed, +1 -2
+
+6) #685, Add monthly summary attachment to capital manager
+  Added opportunity to load file 'monthly_summary' in capital manager
+  It is new Common::DocumentType
+oaded, table cell replace by Hotwire to cell with download opportunity
+  This day 1h 14m
+  Result 28h 8m
+  13 files changed, +229 -81
+
+Documentation:
+a) Utils
+  app/lib/text_utils.rb
+    TextUtils.days_diff
+    TextUtils.num2fmt
+    TextUtils.type2word
+    TextUtils.to_typeahead_json
+b) fixed section_for_with_button
+c) fixed shared/numeric_cell
+------------------------------
