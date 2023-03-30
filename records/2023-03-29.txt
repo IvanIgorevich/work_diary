@@ -1,0 +1,9 @@
+
+
+08:59
+
+2023-03-28:
+1) #1244, started after @yegorch, this day 3h 17m
+2) Tests, tried to fix rspec part
+3) Documentation, this diary
+------------------------------

@@ -1,0 +1,14 @@
+
+
+15:20
+
+2023-03-27:
+1) #1518, Fix manual date input on New Tasks->due on date
+  Changed jquery datepicker to input type=date
+  Made Due Date format mm/dd/yyyy editable by input with format dd-mm-yyyy
+  This day 2h 5m
+  Result 3h 12m
+  2 files changed, +13 -8
+2) Tests, fixed user_task_comments_controller_test.rb
+3) Documentation, this diary, weekly report
+------------------------------

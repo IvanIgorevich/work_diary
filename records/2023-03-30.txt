@@ -1,0 +1,17 @@
+
+13:26
+
+2023-03-29:
+1) #1244, In tasks change assigned to, and subscribers dropdown to regular one,
+  Yegor's task, my part:
+  fixed subscriber select in UserTask#edit, made him deletable
+  fixed assigned select in UserTask#edit, added vuex mutation
+  This day 1h 59m,
+  Result 5h 16m
+  3 files changed, +26 -22
+2) #685, completion, 
+  By Stimulus hide Add button & made loading file after change file-input
+  this day 1h 36m
+3) Tests,tried to fix rspec part
+4) Documentation, this diary
+------------------------------
