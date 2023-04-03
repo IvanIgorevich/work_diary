@@ -48,6 +48,31 @@ def save_work_diary(directory)
       file.puts("------------------------------")
     end
     puts "Saved in weekly_reports/#{file_name}"
+  elsif directory == 'm'
+    monthly_reports_path = File.join(current_path, "monthly_reports")
+    Dir.mkdir(monthly_reports_path) unless Dir.exist?(monthly_reports_path)
+
+    time = Time.now.to_date
+    start_of_month = time.beginning_of_month
+    end_of_month = time.end_of_month
+    file_name = start_of_month.strftime("monthly_report_%Y-%m-%d")
+
+    file_path = File.join(monthly_reports_path, file_name)
+    File.open(file_path, "a:UTF-8") do |file|
+      all_lines = []
+      while true do
+        line = STDIN.gets.encode("UTF-8").chomp
+        break if line == "end"
+        all_lines << line
+      end
+
+      file.puts("\n\r#{start_of_month.strftime("%Y-%m-%d")} - #{end_of_month.strftime("%Y-%m-%d")}\n\r")
+      all_lines.each do |item|
+        file.puts(item)
+      end
+      file.puts("------------------------------")
+    end
+    puts "Saved in monthly_reports/#{file_name}"
   else
     records_path = File.join(current_path, "records")
     Dir.mkdir(records_path) unless Dir.exist?(records_path)

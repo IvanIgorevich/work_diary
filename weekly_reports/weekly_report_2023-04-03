@@ -1,0 +1,31 @@
+
+2023-04-03 - 2023-04-09
+
+1) #1518, Fix manual date input on New Tasks->due on date
+  Changed jquery datepicker to input type=date
+  Made Due Date format mm/dd/yyyy editable by input with format dd-mm-yyyy
+  Result 3h 12m
+  2 files changed, +13 -8
+
+2)  #1244, In tasks change assigned to, and subscribers dropdown to regular one,
+  Yegor's task, my part:
+  fixed subscriber select in UserTask#edit, made him deletable
+  fixed assigned select in UserTask#edit, added vuex mutation
+  Result 5h 16m
+  3 files changed, +26 -22
+
+Completion:
+
+1) #685, completion, 
+  By Stimulus hide Add button & made loading file after change file-input
+  this day 1h 36m
+
+2) #1405, TermSheet Exporter Change
+  Vue.js
+  completion, 
+  fixed Slack button,
+  this day 1h,
+  Result 1h 26m,
+  3 files changed, +13 -7
+
+------------------------------

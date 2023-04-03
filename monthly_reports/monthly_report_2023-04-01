@@ -1,0 +1,81 @@
+
+
+2023-04-01 - 2023-04-30
+
+March:
+
+1) #1395, Add export button to RE Operations Deals Paid This Month table
+  Added Export button to all tables Operations,
+  Added data for Csv
+  Changed tables at the request of the boss
+  Made submenu dropdown with tables
+  Upgrade section_for_with_button
+  3 pull requests:
+  Result 7h 3m
+  16 files changed, +138 -123
+  9 files changed, +113 -21
+  1 files changed, +1 -1
+
+2) #1519, Add popup like you did with Term Sheets on the Report page to others
+  added options at the request of the boss for some stages to show details of monthly kpi
+  Result 2h 32m,
+  2 files changed, +10 -2
+
+3) #1302, Radio button for Selection Valuation Source = HC.
+Added House Canary as RealEstate::ValuationSource
+Made Stimulus controller Re__AsIsValueController for change deal.as_is_value if deal.as_is_valuation_source.name == 'House Canary'
+  Result 5h 2m,
+  6 files changed, +61 -17
+
+4) #1517, Add collapse/expand all tables to Operations page
+  Created Re__Operations__CollapseAllController
+  Added stimulus_controller & stimulus_target to section_for_with_button
+  When static value collapseButton true - all collapsed, button.textContent = 'Expand All', click->expandAll
+  When static value collapseButton false, button.textContent = 'Collapse All', click->collapseAll
+  All collapsed by default
+  Result 5h 10m,
+  5 files changed, +150 -50, because merge 1395 - no sure
+
+5) #1406 Add % to daily ops summary email table,
+  Added row upcoming_payments,
+  Added column % and formula for it 
+  Result 1h 2m,
+  3 files changed, +20 -9
+
+6) #1051, Loans that matured show 0 balance on CF page
+  Added opportunity to sum maturity.total if maturity.unpaid?
+  Rebuild local DB: RealEstate::DealUtils.build_all_cash_flow_summaries
+  Result 4h 5m,
+  1 files changed, +2 -2
+
+7) #1518, Fix manual date input on New Tasks->due on date
+  Changed jquery datepicker to input type=date
+  Made Due Date format mm/dd/yyyy editable by input with format dd-mm-yyyy
+  Result 3h 12m
+  2 files changed, +13 -8
+
+8) #1244, In tasks change assigned to, and subscribers dropdown to regular one,
+  Yegor's task, my part:
+  fixed subscriber select in UserTask#edit, made him deletable
+  fixed assigned select in UserTask#edit, added vuex mutation
+  Result 5h 16m
+  3 files changed, +26 -22
+
+Completion:
+
+1) #685, Add monthly summary attachment to capital manager
+  Added opportunity to load file 'monthly_summary' in capital manager
+  It is new Common::DocumentType
+oaded, table cell replace by Hotwire to cell with download opportunity
+  By Stimulus hide Add button & made loading file after change file-input
+  Result 29h 44m
+  15 files changed, +248 -81
+
+2) #1405, TermSheet Exporter Change
+  Vue.js
+  Removed opportunity to download from Slack button,
+  Fixed tooltip
+  fixed Slack button,
+  Result 1h 26m,
+  3 files changed, +13 -7
+------------------------------
