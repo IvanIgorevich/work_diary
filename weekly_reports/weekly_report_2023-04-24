@@ -1,0 +1,14 @@
+
+2023-04-24 - 2023-04-30
+
+2023-04-10 - 2023-04-28:
+1) #1456, On Operations page added remembering sections position
+   Added this logic to Collapse/Expand All controller, suitable for reuse
+   Result 5h 4m
+   3 files changed, +82 -20
+
+2) #1519, complectation
+   fixed tooltip_helper.rb#html_td_tooltip_div
+   Result 3h 57m
+   3 files changed, +12, -3
+------------------------------

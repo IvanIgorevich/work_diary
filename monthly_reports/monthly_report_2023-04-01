@@ -55,7 +55,7 @@ Made Stimulus controller Re__AsIsValueController for change deal.as_is_value if 
   2 files changed, +13 -8
 
 8) #1244, In tasks change assigned to, and subscribers dropdown to regular one,
-  Yegor's task, my part:
+  Yegors task, my part:
   fixed subscriber select in UserTask#edit, made him deletable
   fixed assigned select in UserTask#edit, added vuex mutation
   Result 5h 16m

@@ -1,0 +1,16 @@
+
+2023-05-01 - 2023-05-07
+
+1) #685, , Add monthly summary attachment to capital manager
+  Added opportunity to load file 'monthly_summary' in capital manager
+  It is new Common::DocumentType
+oaded, table cell replace by Hotwire to cell with download opportunity
+  By Stimulus hide Add button & made loading file after change file-input
+  If monthly summary exist, it added to email
+  Result 33h 8m,
+  12 files changed, +230 -112
+
+2) #1456, On Operations page added remembering sections position,
+  Added this logic to Collapse/Expand All controller, suitable for reuse
+  3 files changed, +82 -20
+------------------------------

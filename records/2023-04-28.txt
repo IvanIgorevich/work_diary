@@ -1,0 +1,27 @@
+
+
+12:55
+
+2023-04-27:
+1) #1593, this day 5h 15m, total 5h 40m
+
+2023-04-26:
+1) #685, this day 24m, after last summary 3h 24m, total 33h 8m
+   12 files changed, +231 -113
+
+2) #1456, this day 59m, after last calculation 2h 18m, total 5h 4m
+   On Operations page added remembering sections position
+
+   Added this logic to Collapse/Expand All controller, suitable for reuse
+   3 files changed, +82 -20
+
+3) #1487, this day 6m, after last calculation 2h 24m, after first weekly report 12h 40m
+  total this day 36h 13m
+
+2023-04-21:
+1) #1519, this day 10m, after last calculation 1h 25m,
+   fixed tooltip_helper.rb#html_td_tooltip_div
+   Result 3h 57m
+   3 files changed, +12, -3
+
+------------------------------
