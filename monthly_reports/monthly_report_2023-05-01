@@ -1,0 +1,30 @@
+
+2023-05-01 - 2023-05-31
+
+1) #685, , Add monthly summary attachment to capital manager
+  Added opportunity to load file 'monthly_summary' in capital manager
+  It is new Common::DocumentType
+oaded, table cell replace by Hotwire to cell with download opportunity
+  By Stimulus hide Add button & made loading file after change file-input
+  If monthly summary exist, it added to email
+  Result 33h 8m,
+  12 files changed, +230 -112
+
+2) #1456, On Operations page added remembering sections position,
+  Added this logic to Collapse/Expand All controller, suitable for reuse
+  3 files changed, +82 -20
+
+------------------------------
+
+2023-05-01 - 2023-05-31
+
+3) #1354, Add internal request for wire email functionality to construction draws
+   Added new fields to Constructtion Draw,
+   Created Stimulus controller for this page, it calculated 2 fields of form
+   Now page refreshed by Turbo
+   If checked checkbox, after form submit a form to fill out a letter appears
+   Fields of this form filled from DB, but can corrected
+   Form appeared by turbo-stream, after submit back to construction draws page, also by turbo
+   Result 32h 30m
+   35 files changed, +329 -116
+------------------------------

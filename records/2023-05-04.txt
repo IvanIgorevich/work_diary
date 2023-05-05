@@ -1,0 +1,26 @@
+
+
+11:41
+
+2023-05-02
+1) #1593 this day 14m, total 7h 31m
+
+2) #1354, Add internal request for wire email functionality to construction draws
+   Added new fields to Constructtion Draw,
+   Created Stimulus controller for this page, it calculated 2 fields of form
+   Now page refreshed by Turbo
+   If checked checkbox, after form submit a form to fill out a letter appears
+   Fields of this form filled from DB, but can corrected
+   Form appeared by turbo-stream, after submit back to construction draws page, also by turbo
+   Result 32h 30m
+   35 files changed, +329 -116
+
+3) #1519 this day 15m, total 4h 12m
+------------------------------
+
+
+12:58
+
+2023-05-03:
+1) #1593, this day 5h 39m, total 13h 10m
+------------------------------
