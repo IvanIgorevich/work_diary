@@ -1,0 +1,20 @@
+
+09:29
+
+1) #1593, Add "Fees" to RE Deals -> Foreclosures
+  Made new kind in Common::Fee for foreclosure fee,
+
+  Added RealEstate::Fee#(index, new, edit) pages,
+  Added DateComponent, 
+  Fixed MoneyComponent,
+  Added RealEstate::Fees controller,
+  Added foreclosure fee to to existing logic
+  Added turbo to made all activity on index page, then removed.
+  Added export csv to index table,
+  Result 18h 10m,
+  1th pull request 24 files chsnged +408 -49
+  2nd pull request 20 files changed +230 -123
+
+2) #1519, complectation,
+  Result 4h 54m
+------------------------------
