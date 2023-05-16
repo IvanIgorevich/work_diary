@@ -1,9 +1,10 @@
 
-09:29
 
+09:29
+
+2023-05-12:
 1) #1593, Add "Fees" to RE Deals -> Foreclosures
   Made new kind in Common::Fee for foreclosure fee,
-
   Added RealEstate::Fee#(index, new, edit) pages,
   Added DateComponent, 
   Fixed MoneyComponent,
