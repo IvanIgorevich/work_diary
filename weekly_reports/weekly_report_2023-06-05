@@ -1,0 +1,11 @@
+
+2023-06-05 - 2023-06-11
+
+1) #1936, Add radio button to wire instructions marking ACH or Wire,
+   added payment_method field to wire_info.rb
+   added enum to payment_method
+   added policy to controller,
+   added tests to WireInfo
+   Result 3h 49m, tests 5h 8m
+   15 files changed, +280 -43
+------------------------------

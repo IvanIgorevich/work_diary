@@ -1,0 +1,21 @@
+
+2023-05-29 - 2023-06-04
+
+1) #1747, Construction Draw Emailer v2
+   Add a rich text field called template
+   Use tokes '{TOKEN}' to define substitutable tokens
+   Enable template editor (modal?) on Admin -> Email Notification Manager screen.
+   Instead of checkbox, add a button next to "Save", called "Internal Email".
+   draw manager to a separate New/Edit pages
+    Inside the Actions column, add Email icon to open the Edit page with an Emailer active.
+   Add CC and BCC fields to the Email form.
+   Use the associated template, replacing {TOKENS} with Draw/Deal data.
+   When email is ready, it should have a button "Save Draw and Send". Only save the draw once this button is pressed.
+   Add support to Delay email (send it at specified date/time)
+   Save sent emails, associating them to specific Draw
+   Support file attachment for emails.
+   Add a tooltip over the Amount that shows fee breakdown.
+   Result 43h 55m
+   72 files changed, +834 -441
+   10 files changed, +153 -46 - tests
+------------------------------

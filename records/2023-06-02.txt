@@ -1,0 +1,10 @@
+
+08:59
+
+2023-06-01:
+1) #1936, start, this day 2h 19m
+   tests this day 4h 47m
+
+2023-05-26,29,30,31:
+1) tests for #1747, respectively, 1h 13m, 3h 51m, 6h 56m, 28m, total 12h 28m
+------------------------------
