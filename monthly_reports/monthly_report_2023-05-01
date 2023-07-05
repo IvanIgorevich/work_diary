@@ -1,5 +1,8 @@
 
-2023-05-01 - 2023-05-31
+
+2023-05-01 - 2023-05-31
+
+April:
 
 1) #685, , Add monthly summary attachment to capital manager
   Added opportunity to load file 'monthly_summary' in capital manager
@@ -16,7 +19,8 @@ oaded, table cell replace by Hotwire to cell with download opportunity
 
 ------------------------------
 
-2023-05-01 - 2023-05-31
+
+2023-05-01 - 2023-05-31
 
 3) #1354, Add internal request for wire email functionality to construction draws
    Added new fields to Constructtion Draw,
