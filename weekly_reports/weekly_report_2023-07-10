@@ -1,12 +1,13 @@
 
-2023-07-10 - 2023-07-16
+
+2023-07-10 - 2023-07-16
 
 1) #1490, Credit Line Phase 2
    Full TDD
    added new fields to PropertyType, :max_adv_rate, :max_ltv,
    added display_on with active_flag [:deal_profile, :credit_line] to PropertyType
    Added checkboxes from display_on to separate columns with custom autosave(Stimulus)
-   Wrote migrations to rename some PropertyType & create some with right flags in display_on
+   Wrote migration to rename some PropertyType & create some with right flags in display_on
    Migration are rollbackable
    Create migration for rewrite deleted PropertyType in Investments & QuickLeads
    added uniqness to some fields  in some factories
@@ -24,7 +25,7 @@
    Added Second Work email under main email
    Added Extension behinde Work Phone
    Added Location dropdown menu (NYC, Boston, Miami, Peru, Europe, Other)
-   Implemented this by active_flag & helper method for correct view NYC
+   Implemented this by helper method for correct view NYC
    Changed Organizations by active_flag for multicheck
    Added "End Date", after Hire Date, 
    Added cron job to sending email if End Day closer then 14 days in the future
