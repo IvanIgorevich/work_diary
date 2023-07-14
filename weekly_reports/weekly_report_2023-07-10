@@ -1,0 +1,38 @@
+
+2023-07-10 - 2023-07-16
+
+1) #1490, Credit Line Phase 2
+   Full TDD
+   added new fields to PropertyType, :max_adv_rate, :max_ltv,
+   added display_on with active_flag [:deal_profile, :credit_line] to PropertyType
+   Added checkboxes from display_on to separate columns with custom autosave(Stimulus)
+   Wrote migrations to rename some PropertyType & create some with right flags in display_on
+   Migration are rollbackable
+   Create migration for rewrite deleted PropertyType in Investments & QuickLeads
+   added uniqness to some fields  in some factories
+   Covered Common::CreditLyne by tests
+   added Leverage Qualification Check row with table to Capital Source section Deal#show
+   Added DataGenerator for this table & helper method for Max Available Leverage column
+   Clean up deals_controller & credit_line_controller
+   Result 41h
+   39 files changed +1469 -226
+
+2) #2025, Updates to Users section
+   Rename "All users" page heading to "Team Directory"
+   Full TDD
+   Removed editability of emails from index added editable from the edit page from best_in_place
+   Added Second Work email under main email
+   Added Extension behinde Work Phone
+   Added Location dropdown menu (NYC, Boston, Miami, Peru, Europe, Other)
+   Implemented this by active_flag & helper method for correct view NYC
+   Changed Organizations by active_flag for multicheck
+   Added "End Date", after Hire Date, 
+   Added cron job to sending email if End Day closer then 14 days in the future
+   Added mailer
+   Added EmailNotification for this emails
+   Created generator for template for body of this email
+   Created migration to rewrite old organizations data to new, with active_flag
+   Covered all by tests
+   Result 29h 28m
+   32 files changed, +699 -55
+------------------------------
