@@ -1,0 +1,10 @@
+
+2023-07-17 - 2023-07-23
+
+1) #2120, Add "Assignee" col to Subscribed Tasks table in the Daily Email
+   Full TDD
+   Covered by tests TaskAssignmentMailer
+   Added "Assignee" col to  Subscribed Tasks table in the Daily Email
+   Result 2h 23m
+   7 files changed, +62 -6
+------------------------------
