@@ -1,0 +1,22 @@
+
+
+2023-06-01 - 2023-06-31
+
+June
+
+1) #1936, Add radio button to wire instructions marking ACH or Wire,
+   added payment_method field to wire_info.rb
+   added enum to payment_method
+   added policy to controller,
+   added tests to WireInfo
+   Result 3h 49m, tests 5h 8m
+   15 files changed, +280 -43
+
+2) #1976, NoMethodError in RealEstate::Insurances#index,
+   Find & fixed error
+   It was DB problem with missing EmailNotification in some Insurance
+   Fixed in migration with scip validation
+   Result 2h 44m
+   1 files changed, +14 -0
+
+------------------------------
