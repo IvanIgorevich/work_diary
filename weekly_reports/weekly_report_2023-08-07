@@ -8,8 +8,9 @@
    Create if TermSheetApproval does not exist
    Approving if TermSheetApproval not completed
    Download if Deal have Term Sheet in documents
-   Upload if Deal not in Term Sheet stage and do not have Term Sheet in documents
-   After Create creating TermSheetApproval in stage generate and redirect to #edit
+   Upload Existing Term Sheet if Deal not in Term Sheet stage and do not have Term Sheet in documents
+   If Deal have TermSheetApproval, dropdown have item Approval Wizard
+   After creating TermSheetApproval is in stage generate and page redirected to #edit
    In this stage page have selector WireInfos if rd_debt_fund_2 is Deal Syndicate
    After selecting Wire Info, enable button Start Generating by specific for this stage Stimulus controller
    After click that button it disabled and on frontend start creating Term Sheet docx
@@ -20,32 +21,30 @@
    All TermSheetApproval stages have Audits table on the bottom
    Which have CustomAudits for activities
    CustomAudits creates in TermSheetApprovalsController and, mostly, in Stimulus controllers
-   Submit for Approve click change stage in specific Stimulus controller for this stage
+   Submit for Approve click change stage in specific Stimulus controller for this stage,
    Create UserTask, where assignee is User, who created TermSheetApproval
    And where subscribers is all Users with :real_estate_term_sheet_approver role
    After that Stimulus submitting form
-   Also editing stage page have checkbox Send Email.
-   If it checked, in TermSheetApprovalsController builds SentEmail from EmailNotification for TermSheetApproval
-   Pending Approval stage page have form for SentEmail and buttons REQUEST CHANGES & APPROVE
+   In TermSheetApprovalsController builds SentEmail from EmailNotification for TermSheetApproval
+   Pending Approval stage page have form for SentEmail, link to Term Sheet in Dropbox and buttons REQUEST CHANGES & APPROVE
    Buttons visible only for users, which have :real_estate_term_sheet_approver role
    If buttons click, stimulus change stage in hidden field and submit form
    And creates CustomAudit with specific description
    If click REQUEST CHANGES, opens new window with UserTask, which description ask Approver to live comment about this
    When in stage Edited click button Submit for Approve, it made new comment to UserTask of this TermSheetApproval
-   Next stage, approved, have buttons Revoke Approval & Completed, checkbox Final Approve
+   APPROVE click downloading Term Sheet from Dropbox
+   And creating Common::Document for Deal with specific DocumentType,
+   Changed stage in hidden field and submit form
+   Next stage, approved, have buttons Revoke Approval, Finalize Approval, Finalize Approval & Send to Slack
    Its visible only for users, which have :real_estate_term_sheet_approver role
-   And buttons Upload Term Sheet & Send to Slack
-   Send to Slack click downloading Term Sheet from Dropbox and sent to Slack
+   Finalize Approval & Send to Slack click downloading Term Sheet from Dropbox, sent to Slack
    All on frontend, by stimulus
-   Then created SentSlack
-   Upload Term Sheet click downloading Term Sheet from Dropbox
-   And creating Common::Document for Deal with specific DocumentType
+   Then created SentSlack, changed stage to :completed and submit form
+   Finalize Approval just changed stage to :completed and submit form
    Revoke Approval click removing Common::Document & SentSlack, change stage to :pending_approval and submit form
-   Checked checkbox Final Approve changes stage to :completed in hidden field
-   Unchecked changes stage to :approved
-   Completed button click submits form
-   In this stage, completed, page redirect to Deal Profile
+   In next stage, completed, page have only text Term Sheet Approval Completed & Audits table
    After click any button all buttons disabled until finished process of button, then enabled
-   Result 78h 17m
-   52 files changed, +2097 -227
+   All UI with system tests for any cases
+   Result 87h 54m
+   64 files changed, +2733 -819
 ------------------------------
