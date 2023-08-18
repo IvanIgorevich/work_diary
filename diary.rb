@@ -1,5 +1,5 @@
-require 'date'
-require 'active_support/all'
+require "date"
+require "active_support/all"
 
 # Set encoding for Windows platform
 if Gem.win_platform?
