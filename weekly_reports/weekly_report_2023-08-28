@@ -1,0 +1,14 @@
+
+2023-08-28 - 2023-09-03
+
+1) #2252, Add Acquisition Loan to Purchase Price LTV (ALTPP)
+   Covered by tests IDENTY section in RealEstate::Deal#show
+   Added tooltip for :altpp
+   Fixed deals_helper.rb#format_investment
+   Added id for wrapper shared/_readonly_fields.html.erb
+   Created factory :real_estate_valuation_source
+   fixed some old tests due to new changes
+   Added deal.altpp method for calculate it
+   Result 4h 17m
+   11 files changed, +271 -56
+------------------------------
