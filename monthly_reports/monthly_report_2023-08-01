@@ -29,7 +29,7 @@ July
    Added Location dropdown menu (NYC, Boston, Miami, Peru, Europe, Other)
    Implemented this by helper method for correct view NYC
    Changed Organizations by active_flag for multicheck
-   Added "End Date", after Hire Date, 
+   Added "End Date", after Hire Date,
    Added cron job to sending email if End Day closer then 14 days in the future
    Added mailer
    Added EmailNotification for this emails
@@ -38,4 +38,11 @@ July
    Covered all by tests
    Result 29h 28m
    32 files changed, +699 -55
+
+3)  #2120, Add "Assignee" col to Subscribed Tasks table in the Daily Email
+		Full TDD
+		Covered by tests TaskAssignmentMailer
+		Added "Assignee" col to  Subscribed Tasks table in the Daily Email
+		Result 2h 23m
+		7 files changed, +62 -6
 ------------------------------

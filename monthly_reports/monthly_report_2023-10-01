@@ -1,0 +1,35 @@
+
+
+2023-10-01 - 2023-10-31
+
+September
+
+1) #1698, Enhance Budget and Funded status workflow
+   On Deal Profile, after Funded stage clicked, opens RealEstate::Closings#new
+   Model has decimal fields :short_interest, :appraisal_feasibility_fees, :flood_certification,
+            :servicing_fees, :wire_fees, :other_costs
+   Belong_to RealEstate#Deal, Common::BusinessEntity
+   Page #new nave calculated fields:
+   Total Closing Costs, which have sum of all model fields
+   Total Loan Amoun: deal.budget.acquisition
+   Construction Escrow: deal.budget.construction_escrow
+   Amount To Disburse: Total Loan Amoun - Total Closing Costs
+   Calculated on browser by Stimulus
+   Page have checkbox Send by email
+   Disabled if deal have no issuer, in this case page have link to add issuer
+   If checked, showed issuer wire info or modal to add this
+   Afteer adding, wire info appends on page by Turbo Stream
+   Page have two file fields to specific closing docs
+   Common::Documents to deal creates in closings_controller
+   Each file field have checkbox Attach to email
+   If it check, file attaches to SentEmail
+   RealEstate::Closing have_one SentEmail by polymorfic
+   If Send by Email checked, after submit form opens SentEmail edit page
+   SentEmail creates in closings_controller by EmailNotification
+   Template from this EmailNotification have tokens
+   Tokens replaces with specific data in modul RealEstate::EmailGenerator
+   After creating RealEstate::Closing, deal stage changes to Funded
+   All covered by tests
+   Result 39h 36m
+   44 files changed, +1831 -68
+------------------------------

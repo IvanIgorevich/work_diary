@@ -1,0 +1,63 @@
+
+
+2023-10-01 - 2023-10-31
+
+August
+
+1) #1756, New Term Sheet process
+   Made Term Sheet link for secondary Deal menu
+   It visible in all stages after Lead and have dropdown link
+   Create if TermSheetApproval does not exist
+   Approving if TermSheetApproval not completed
+   Download if Deal have Term Sheet in documents
+   Upload Existing Term Sheet if Deal not in Term Sheet stage and do not have Term Sheet in documents
+   If Deal have TermSheetApproval, dropdown have item Approval Wizard
+   After creating TermSheetApproval is in stage generate and page redirected to #edit
+   In this stage page have selector WireInfos if rd_debt_fund_2 is Deal Syndicate
+   After selecting Wire Info, enable button Start Generating by specific for this stage Stimulus controller
+   After click that button it disabled and on frontend start creating Term Sheet docx
+   And uploading in Dropbox, by stimulus & native js
+   After uploading fill in hidden fields for DropboxFile
+   Then in Stimulus change TermSheetApproval stage, open Dropbox docx editor in new window and submit form
+   Next stage page have link Continue Editing and button Submit for approve
+   All TermSheetApproval stages have Audits table on the bottom
+   Which have CustomAudits for activities
+   CustomAudits creates in TermSheetApprovalsController and, mostly, in Stimulus controllers
+   Submit for Approve click change stage in specific Stimulus controller for this stage,
+   Create UserTask, where assignee is User, who created TermSheetApproval
+   And where subscribers is all Users with :real_estate_term_sheet_approver role
+   After that Stimulus submitting form
+   In TermSheetApprovalsController builds SentEmail from EmailNotification for TermSheetApproval
+   Pending Approval stage page have form for SentEmail, link to Term Sheet in Dropbox and buttons REQUEST CHANGES & APPROVE
+   Buttons visible only for users, which have :real_estate_term_sheet_approver role
+   If buttons click, stimulus change stage in hidden field and submit form
+   And creates CustomAudit with specific description
+   If click REQUEST CHANGES, opens new window with UserTask, which description ask Approver to live comment about this
+   When in stage Edited click button Submit for Approve, it made new comment to UserTask of this TermSheetApproval
+   APPROVE click downloading Term Sheet from Dropbox
+   And creating Common::Document for Deal with specific DocumentType,
+   Changed stage in hidden field and submit form
+   Next stage, approved, have buttons Revoke Approval, Finalize Approval, Finalize Approval & Send to Slack
+   Its visible only for users, which have :real_estate_term_sheet_approver role
+   Finalize Approval & Send to Slack click downloading Term Sheet from Dropbox, sent to Slack
+   All on frontend, by stimulus
+   Then created SentSlack, changed stage to :completed and submit form
+   Finalize Approval just changed stage to :completed and submit form
+   Revoke Approval click removing Common::Document & SentSlack, change stage to :pending_approval and submit form
+   In next stage, completed, page have only text Term Sheet Approval Completed & Audits table
+   After click any button all buttons disabled until finished process of button, then enabled
+   All UI with system tests for any cases
+   Result 87h 54m
+   64 files changed, +2733 -819
+
+2) #2252, Add Acquisition Loan to Purchase Price LTV (ALTPP)
+	  Covered by tests IDENTY section in RealEstate::Deal#show
+	  Added tooltip for :altpp
+	  Fixed deals_helper.rb#format_investment
+	  Added id for wrapper shared/_readonly_fields.html.erb
+	  Created factory :real_estate_valuation_source
+	  fixed some old tests due to new changes
+	  Added deal.altpp method for calculate it
+	  Result 4h 17m
+	  11 files changed, +271 -56
+------------------------------
