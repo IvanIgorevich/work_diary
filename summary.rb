@@ -3,19 +3,19 @@
 require 'date'
 require 'active_support/all'
 
-# Проверка платформы для кодировки
+# Set encoding for Windows platform
 if Gem.win_platform?
   Encoding.default_external = Encoding.find(Encoding.locale_charmap)
   Encoding.default_internal = __ENCODING__
   [STDIN, STDOUT].each { |io| io.set_encoding(Encoding.default_external, Encoding.default_internal) }
 end
 
-# Метод для чтения файла и извлечения задач и времени
+# Method to read a file and extract tasks and time
 def parse_tasks(file_content)
   tasks = {}
 
-  # Добавим вывод отладочной информации
-  puts "Парсинг содержимого файла:\n#{file_content}"
+  # Debug output
+  puts "Parsing file content:\n#{file_content}"
 
   file_content.scan(/(\d{4}-\d{2}-\d{2}):\s*\n([\s\S]*?)\n-+/).each do |date, block|
     block.scan(/#(\d+),.*total (\d+h \d+m)/).each do |task_id, time|
@@ -26,35 +26,35 @@ def parse_tasks(file_content)
   tasks
 end
 
-# Метод для преобразования времени вида "2h 10m" в минуты
+# Method to convert time like "2h 10m" to minutes
 def time_to_minutes(time_str)
   hours, minutes = time_str.scan(/(\d+)h (\d+)m/).flatten.map(&:to_i)
   hours * 60 + minutes
 end
 
-# Метод для получения всех файлов в заданном диапазоне
+# Method to get all files in a given date range
 def files_in_range(start_date, end_date, directory = 'records')
   files = Dir.glob(File.join(directory, '*.txt')).select do |file|
     file_date = Date.parse(File.basename(file, '.txt'))
     (start_date..end_date).cover?(file_date)
   end
 
-  # Добавляем вывод найденных файлов для отладки
-  puts "Найдено файлов для анализа: #{files.size}"
-  files.each { |file| puts "Анализируем файл: #{file}" }
+  # Debug output of found files
+  puts "Found files for analysis: #{files.size}"
+  files.each { |file| puts "Analyzing file: #{file}" }
 
   files
 end
 
-# Метод для анализа всех задач в диапазоне дат
+# Method to analyze all tasks in a date range
 def analyze_tasks(start_date, end_date, directory = 'records')
   all_tasks = {}
 
-  # Расширяем конечную дату на 5 дней
+  # Extend the end date by 5 days
   extended_end_date = end_date + 5.days
 
-  # Ищем файлы в диапазоне
-  puts "Анализируем файлы с #{start_date} по #{extended_end_date}"
+  # Search for files in the range
+  puts "Analyzing files from #{start_date} to #{extended_end_date}"
   files_in_range(start_date, extended_end_date, directory).each do |file|
     file_content = File.read(file)
     tasks = parse_tasks(file_content)
@@ -68,22 +68,22 @@ def analyze_tasks(start_date, end_date, directory = 'records')
   all_tasks
 end
 
-# Метод для сортировки задач по времени
+# Method to sort tasks by time
 def sort_tasks_by_time(tasks)
   tasks.sort_by { |_, time| -time_to_minutes(time) }
 end
 
-# Основной метод для создания отчета
+# Main method to create the report
 def create_summary_report(start_date, end_date)
-  puts "Создаем отчет за период с #{start_date} по #{end_date}"
+  puts "Creating report for the period from #{start_date} to #{end_date}"
   tasks = analyze_tasks(start_date, end_date)
   sorted_tasks = sort_tasks_by_time(tasks)
 
-  # Создаем файл с результатами
+  # Create a file with the results
   report_file_name = "#{start_date}__#{end_date}.txt"
   File.open(report_file_name, 'w:UTF-8') do |file|
     if sorted_tasks.empty?
-      file.puts "Нет задач в указанном диапазоне."
+      file.puts "No tasks in the specified range."
     else
       sorted_tasks.each do |task_id, time|
         file.puts "Task ##{task_id}: #{time}"
@@ -91,13 +91,13 @@ def create_summary_report(start_date, end_date)
     end
   end
 
-  puts "Отчет создан: #{report_file_name}"
+  puts "Report created: #{report_file_name}"
 end
 
-# Основной код
+# Main code
 begin
   if ARGV.length < 2
-    puts "Введите две даты в формате 'DD MM YYYY'"
+    puts "Please enter two dates in the format 'YYYY-MM-DD'"
     exit
   end
 
@@ -106,16 +106,16 @@ begin
   start_date = Date.parse(start_date_str)
   end_date = Date.parse(end_date_str)
 
-  puts "Проверка введенных дат: начало #{start_date}, конец #{end_date}"
+  puts "Checking entered dates: start #{start_date}, end #{end_date}"
 
-  # Проверяем, что первая дата должна быть меньше или равна второй
+  # Ensure the first date is less than or equal to the second
   if start_date > end_date
-    puts "Ошибка: дата начала #{start_date} больше даты окончания #{end_date}. Исправьте порядок аргументов."
+    puts "Error: start date #{start_date} is after end date #{end_date}. Please correct the order of arguments."
     exit
   end
 
   create_summary_report(start_date, end_date)
 
 rescue ArgumentError => e
-  puts "Ошибка в формате даты: #{e.message}"
+  puts "Date format error: #{e.message}"
 end

@@ -63,15 +63,17 @@ def save_daily_record
   records_path = File.join(current_path, "records")
   Dir.mkdir(records_path) unless Dir.exist?(records_path)
 
-  all_lines = []
-  line = nil
-
-  while line != "end" do
-    line = STDIN.gets.encode("UTF-8").chomp
-    all_lines << line
+  puts "Enter date (YYYY-MM-DD):"
+  date_input = STDIN.gets.chomp
+  # Validate date format
+  begin
+    date = Date.parse(date_input)
+  rescue ArgumentError
+    puts "Invalid date format. Please use YYYY-MM-DD."
+    return
   end
 
-  all_lines.pop
+  date_line = "#{date.strftime("%Y-%m-%d")}:"
 
   time = Time.now
   file_name = time.strftime("%Y-%m-%d")
@@ -81,9 +83,53 @@ def save_daily_record
   file_path = File.join(records_path, "#{file_name}.txt")
   File.open(file_path, "a:UTF-8") do |file|
     file.puts("\n\r#{time_string}\n\r")
-    all_lines.each do |item|
-      file.puts(item)
+    file.puts(date_line)
+
+    task_number = nil
+    task_count = 1
+
+    while true
+      puts "#{ordinal(task_count)} task:"
+      task_input = STDIN.gets.chomp
+      break if task_input.downcase == "end"
+
+      # Parse the task input
+      # Expecting format: "task_number hh:mm"
+      task_match = task_input.match(/^(\d+)\s+(\d{1,2}):(\d{2})$/)
+      if task_match
+        task_number = task_match[1]
+        hours_input = task_match[2].to_i
+        minutes_input = task_match[3].to_i
+
+        # Convert input time to total minutes
+        task_minutes = hours_input * 60 + minutes_input
+
+        # Format task time according to the rules
+        task_time = format_time(hours_input, minutes_input)
+
+        # Search for previous total time
+        total_time = find_previous_total_time(task_number)
+
+        # Add new time to total time
+        new_total_time = if total_time
+                           add_times(total_time, task_time)
+                         else
+                           task_time
+                         end
+
+        # Write the task line
+        if total_time
+          file.puts("#{task_count}) ##{task_number}, this day #{task_time}, total #{new_total_time}")
+        else
+          file.puts("#{task_count}) ##{task_number}, this day #{task_time}, start")
+        end
+
+        task_count += 1
+      else
+        puts "Invalid input format. Please enter task number and time in format '1234 hh:mm'"
+      end
     end
+
     file.puts(separator)
   end
 
@@ -108,6 +154,81 @@ def save_report(file_path, start_date, end_date)
   end
 
   puts "Saved in #{file_path}"
+end
+
+# Helper method to convert ordinal numbers
+def ordinal(number)
+  suffixes = ["First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth", "Ninth", "Tenth"]
+  suffixes[number - 1] || "#{number}th"
+end
+
+# Helper method to find previous total time for a task
+def find_previous_total_time(task_number)
+  # Get the date six months ago
+  start_date = Date.today - 180
+  end_date = Date.today
+
+  # Get all the files in the date range
+  files = Dir.glob(File.join("records", "*.txt")).select do |file|
+    file_date = Date.parse(File.basename(file, '.txt')) rescue nil
+    file_date && (start_date..end_date).cover?(file_date)
+  end
+
+  # Sort files by date
+  files.sort_by! { |file| File.basename(file, '.txt') }
+
+  # Initialize total_time as nil
+  total_time = nil
+
+  files.each do |file|
+    file_content = File.read(file)
+    # Find all task entries
+    file_content.scan(/#(\d+),.*total ([\dh ]*\d+m|start)/).each do |found_task_number, time|
+      if found_task_number == task_number
+        # Update total_time
+        total_time = time
+      end
+    end
+  end
+
+  total_time
+end
+
+# Helper method to convert time string to minutes
+def time_to_minutes(time_str)
+  return 0 if time_str == "start"
+
+  hours = 0
+  minutes = 0
+  if time_str =~ /(\d+)h/
+    hours = $1.to_i
+  end
+  if time_str =~ /(\d+)m/
+    minutes = $1.to_i
+  end
+  hours * 60 + minutes
+end
+
+# Helper method to add two time strings
+def add_times(time1, time2)
+  minutes1 = time_to_minutes(time1)
+  minutes2 = time_to_minutes(time2)
+
+  total_minutes = minutes1 + minutes2
+
+  hours = total_minutes / 60
+  minutes = total_minutes % 60
+
+  format_time(hours, minutes)
+end
+
+# Helper method to format time according to the rules
+def format_time(hours, minutes)
+  parts = []
+  parts << "#{hours}h" if hours > 0
+  parts << "#{minutes}m" if minutes > 0
+  parts << "0m" if hours == 0 && minutes == 0
+  parts.join(' ')
 end
 
 # Call the save_work_diary method with the command line argument
