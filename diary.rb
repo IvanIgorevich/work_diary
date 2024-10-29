@@ -101,27 +101,24 @@ def save_daily_record
         hours_input = task_match[2].to_i
         minutes_input = task_match[3].to_i
 
-        # Convert input time to total minutes
-        task_minutes = hours_input * 60 + minutes_input
-
         # Format task time according to the rules
         task_time = format_time(hours_input, minutes_input)
 
+        # Convert current task time to minutes
+        task_minutes = hours_input * 60 + minutes_input
+
         # Search for previous total time
-        total_time = find_previous_total_time(task_number)
+        previous_total_minutes = find_previous_total_time(task_number)
 
-        # Add new time to total time
-        new_total_time = if total_time
-                           add_times(total_time, task_time)
-                         else
-                           task_time
-                         end
-
-        # Write the task line
-        if total_time
-          file.puts("#{task_count}) ##{task_number}, this day #{task_time}, total #{new_total_time}")
-        else
+        if previous_total_minutes.nil?
+          # First time ever, write 'start'
           file.puts("#{task_count}) ##{task_number}, this day #{task_time}, start")
+        else
+          # Accumulate total time
+          total_minutes = previous_total_minutes + task_minutes
+          new_total_time = format_time(total_minutes / 60, total_minutes % 60)
+
+          file.puts("#{task_count}) ##{task_number}, this day #{task_time}, total #{new_total_time}")
         end
 
         task_count += 1
@@ -162,7 +159,7 @@ def ordinal(number)
   suffixes[number - 1] || "#{number}th"
 end
 
-# Helper method to find previous total time for a task
+# Helper method to find previous total time in minutes for a task
 def find_previous_total_time(task_number)
   # Get the date six months ago
   start_date = Date.today - 180
@@ -177,21 +174,29 @@ def find_previous_total_time(task_number)
   # Sort files by date
   files.sort_by! { |file| File.basename(file, '.txt') }
 
-  # Initialize total_time as nil
-  total_time = nil
+  previous_total_minutes = nil
 
   files.each do |file|
     file_content = File.read(file)
     # Find all task entries
-    file_content.scan(/#(\d+),.*total ([\dh ]*\d+m|start)/).each do |found_task_number, time|
+    file_content.scan(/#(\d+),.*this day ([\dh ]*\d+m),.*(?:total ([\dh ]*\d+m)|start)/).each do |found_task_number, this_day_time, total_time|
       if found_task_number == task_number
-        # Update total_time
-        total_time = time
+        if total_time == "start"
+          # If 'start' is found and no previous total, set total to this day's time
+          previous_total_minutes ||= 0
+        elsif total_time
+          # Update previous_total_minutes with the latest total time
+          previous_total_minutes = time_to_minutes(total_time)
+        else
+          # If no total time but 'this day' time exists, add it to previous_total_minutes
+          previous_total_minutes ||= 0
+          previous_total_minutes += time_to_minutes(this_day_time)
+        end
       end
     end
   end
 
-  total_time
+  previous_total_minutes
 end
 
 # Helper method to convert time string to minutes
@@ -207,19 +212,6 @@ def time_to_minutes(time_str)
     minutes = $1.to_i
   end
   hours * 60 + minutes
-end
-
-# Helper method to add two time strings
-def add_times(time1, time2)
-  minutes1 = time_to_minutes(time1)
-  minutes2 = time_to_minutes(time2)
-
-  total_minutes = minutes1 + minutes2
-
-  hours = total_minutes / 60
-  minutes = total_minutes % 60
-
-  format_time(hours, minutes)
 end
 
 # Helper method to format time according to the rules
