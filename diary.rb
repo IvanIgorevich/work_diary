@@ -155,7 +155,19 @@ end
 
 # Helper method to convert ordinal numbers
 def ordinal(number)
-  suffixes = ["First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth", "Ninth", "Tenth"]
+  suffixes = [
+    "First",
+    "Second",
+    "Third",
+    "Fourth",
+    "Fifth",
+    "Sixth",
+    "Seventh",
+    "Eighth",
+    "Ninth",
+    "Tenth"
+  ]
+
   suffixes[number - 1] || "#{number}th"
 end
 
@@ -166,32 +178,65 @@ def find_previous_total_time(task_number)
   end_date = Date.today
 
   # Get all the files in the date range
-  files = Dir.glob(File.join("records", "*.txt")).select do |file|
-    file_date = Date.parse(File.basename(file, '.txt')) rescue nil
+  base_dir = File.dirname(__FILE__)
+  candidate_dirs = [
+    File.join(base_dir, "records"),
+    File.join(base_dir, "spec", "records")
+  ]
+
+  files = candidate_dirs.select { |d| Dir.exist?(d) }.flat_map do |dir|
+    Dir.glob(File.join(dir, "*.txt"))
+  end
+
+  files.select! do |file|
+    file_date = begin
+      Date.parse(File.basename(file, ".txt"))
+    rescue ArgumentError
+      nil
+    end
+
     file_date && (start_date..end_date).cover?(file_date)
   end
 
   # Sort files by date
-  files.sort_by! { |file| File.basename(file, '.txt') }
+  files.sort_by! { |file| File.basename(file, ".txt") }
 
   previous_total_minutes = nil
 
   files.each do |file|
     file_content = File.read(file)
+
     # Find all task entries
-    file_content.scan(/#(\d+),.*this day ([\dh ]*\d+m),.*(?:total ([\dh ]*\d+m)|start)/).each do |found_task_number, this_day_time, total_time|
-      if found_task_number == task_number
-        if total_time == "start"
-          # If 'start' is found and no previous total, set total to this day's time
-          previous_total_minutes ||= 0
-        elsif total_time
-          # Update previous_total_minutes with the latest total time
-          previous_total_minutes = time_to_minutes(total_time)
-        else
-          # If no total time but 'this day' time exists, add it to previous_total_minutes
-          previous_total_minutes ||= 0
-          previous_total_minutes += time_to_minutes(this_day_time)
-        end
+    pattern = %r{
+      # task number
+      \#(\d+),
+      .*this\ day\s+
+      # this day time: '5h 30m' | '30m' | '5h'
+      ((?:\d+h)?\s?\d+m|\d+h),
+      .*
+      # either 'total <time>' or 'start'
+      (?:
+        total\s+((?:\d+h)?\s?\d+m|\d+h)
+        |
+        (start)
+      )
+    }x
+
+    file_content.scan(pattern).each do |
+      found_task_number, this_day_time, total_time, start_marker
+    |
+      next unless found_task_number == task_number
+
+      if start_marker == "start"
+        # If 'start' is found and no previous total, set total to this day's time
+        previous_total_minutes ||= 0
+      elsif total_time
+        # Update previous_total_minutes with the latest total time
+        previous_total_minutes = time_to_minutes(total_time)
+      else
+        # If no total time but 'this day' time exists, add it to previous_total_minutes
+        previous_total_minutes ||= 0
+        previous_total_minutes += time_to_minutes(this_day_time)
       end
     end
   end
@@ -205,12 +250,15 @@ def time_to_minutes(time_str)
 
   hours = 0
   minutes = 0
+
   if time_str =~ /(\d+)h/
     hours = $1.to_i
   end
+
   if time_str =~ /(\d+)m/
     minutes = $1.to_i
   end
+
   hours * 60 + minutes
 end
 
@@ -220,8 +268,8 @@ def format_time(hours, minutes)
   parts << "#{hours}h" if hours > 0
   parts << "#{minutes}m" if minutes > 0
   parts << "0m" if hours == 0 && minutes == 0
-  parts.join(' ')
+  parts.join(" ")
 end
 
 # Call the save_work_diary method with the command line argument
-save_work_diary(ARGV[0])
+save_work_diary(ARGV[0]) if __FILE__ == $0

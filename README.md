@@ -14,5 +14,5 @@ Files are named by the date and time of the save. One file per calendar day.
 Files are stored in the program folder.
 
 ~~~
-$ ruby summary.rb "2024-02-27" "2024-09-21"
+$ ruby summary.rb "2025-03-01" "2025-10-22"
 ~~~
