@@ -207,36 +207,20 @@ def find_previous_total_time(task_number)
     file_content = File.read(file)
 
     # Find all task entries
-    pattern = %r{
-      # task number
-      \#(\d+),
-      .*this\ day\s+
-      # this day time: '5h 30m' | '30m' | '5h'
-      ((?:\d+h)?\s?\d+m|\d+h),
-      .*
-      # either 'total <time>' or 'start'
-      (?:
-        total\s+((?:\d+h)?\s?\d+m|\d+h)
-        |
-        (start)
-      )
-    }x
-
-    file_content.scan(pattern).each do |
-      found_task_number, this_day_time, total_time, start_marker
-    |
+    # Match format: #6432, this day 5h 17m, start
+    # or: #6334, this day 1h 8m, total 57h 32m
+    file_content.scan(/\#(\d+),\s*this day\s+((?:\d+h\s?)?\d+m|\d+h),\s*(.+)$/).each do |found_task_number, this_day_time, rest|
       next unless found_task_number == task_number
 
-      if start_marker == "start"
-        # If 'start' is found and no previous total, set total to this day's time
+      # Check if this is 'start' or 'total <time>'
+      if rest.strip == "start"
+        # First entry for this task - accumulate from this day's time
+        this_day_minutes = time_to_minutes(this_day_time)
         previous_total_minutes ||= 0
-      elsif total_time
-        # Update previous_total_minutes with the latest total time
-        previous_total_minutes = time_to_minutes(total_time)
-      else
-        # If no total time but 'this day' time exists, add it to previous_total_minutes
-        previous_total_minutes ||= 0
-        previous_total_minutes += time_to_minutes(this_day_time)
+        previous_total_minutes += this_day_minutes
+      elsif rest =~ /^total\s+((?:\d+h\s?)?\d+m|\d+h)$/
+        # Has total time - use it as the latest total
+        previous_total_minutes = time_to_minutes($1)
       end
     end
   end
