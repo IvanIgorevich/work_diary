@@ -23,10 +23,16 @@ module Diary
       rows.last
     end
 
+    # Дата пишется числом, поэтому формат ячейки берётся у строки прошлого месяца:
+    # у заготовок его нет, и без этого видно 46299 вместо даты.
     def fill(row, hours, date)
       @sheets.backup!(@tab)
       @sheets.write(@tab, [["A#{row.number}", [[(date - SERIAL_EPOCH).to_i]]],
                            ["C#{row.number}", [[hours.to_f]]]], input: "RAW")
+      cell = ->(number) { { sheetId: @sheets.sheet_id(@tab), startRowIndex: number - 1, endRowIndex: number,
+                            startColumnIndex: 0, endColumnIndex: 1 } }
+      @sheets.batch([{ copyPaste: { source: cell.(row.number - 1), destination: cell.(row.number),
+                                    pasteType: "PASTE_FORMAT" } }])
     end
   end
 end
