@@ -4,8 +4,6 @@ module Diary
   # В строку дня пишутся «Пришёл», «Ушёл» и «Перерыв(ы)»; «Время на рабочем месте» считает формула.
   # Новый месяц заполняется целью (14:00 + норма дня, без перерыва), дальше дни перезаписываются фактом.
   class Timesheet
-    API = "https://sheets.googleapis.com/v4/spreadsheets/".freeze
-    SCOPE = "https://www.googleapis.com/auth/spreadsheets".freeze
     WEEKDAYS = %w[Воскресенье Понедельник Вторник Среда Четверг Пятница Суббота].freeze
     DEFAULT_START = 14 * 3600
 
@@ -13,29 +11,31 @@ module Diary
 
     def initialize(config)
       @config = config
-      @id = config.private_setting("sheet", "id") or raise Error, "Нет sheet.id в private/config.yml"
+      id = config.private_setting("sheet", "id") or raise Error, "Нет sheet.id в private/config.yml"
       @tab = config.private_setting("sheet", "tab")
-      @key_file = config.path(config.private_setting("sheet", "key_file") || "private/google-key.json")
+      @sheets = GoogleSheets.new(id, config.path(config.private_setting("sheet", "key_file") || "private/google-key.json"))
     end
 
-    # Пишет фактические приход, уход и перерыв по дням (DayReport с отрезками времени)
+    # Пишет фактические приход, уход и перерыв по дням (DayReport с отрезками времени).
+    # Возвращает имя резервной копии вкладки, если она сделана.
     def write_days(reports)
+      backup = @sheets.backup!(@tab)
       reports.group_by { [_1.date.year, _1.date.month] }.each do |(year, month), month_reports|
         block = find_block(year, month) || create_block(year, month)
         data = month_reports.flat_map do |report|
           row = block.rows.fetch(report.date)
           pause = Duration.parse(report.left) - Duration.parse(report.came) - report.total
-          [{ range: range("C#{row}:D#{row}"), values: [[report.came, report.left]] },
-           { range: range("F#{row}"), values: [[Duration.hms(pause)]] }]
+          [["C#{row}:D#{row}", [[report.came, report.left]]], ["F#{row}", [[Duration.hms(pause)]]]]
         end
-        post("/values:batchUpdate", { valueInputOption: "USER_ENTERED", data: })
+        @sheets.write(@tab, data)
       end
+      backup
     end
 
     # Итог месяца, как его видит компания (строка «ИТОГИ», «Время на рабочем месте»)
     def month_total(year, month)
       block = find_block(year, month) or return
-      value = get("/values/#{escape(range("E#{block.totals}"))}").dig("values", 0, 0)
+      value = @sheets.values(@tab, "E#{block.totals}").dig(0, 0)
       value && Duration.parse(value)
     end
 
@@ -68,16 +68,19 @@ module Diary
       top = source.totals + 2
       sample = { header: source.header, title: source.title, day: source.rows.values.min,
                  subtotal: source.subtotals.first, totals: source.totals }
+      sheet_id = @sheets.sheet_id(@tab)
+      grid = ->(row) { { sheetId: sheet_id, startRowIndex: row - 1, endRowIndex: row, startColumnIndex: 0, endColumnIndex: 8 } }
+
       requests = [{ insertDimension: { range: { sheetId: sheet_id, dimension: "ROWS", startIndex: top - 1,
                                                 endIndex: top - 1 + layout.size },
                                        inheritFromBefore: false } }]
       layout.each_with_index do |(kind, _), i|
-        requests << { copyPaste: { source: grid(sample.fetch(kind)), destination: grid(top + i), pasteType: "PASTE_NORMAL" } }
+        requests << { copyPaste: { source: grid.(sample.fetch(kind)), destination: grid.(top + i), pasteType: "PASTE_NORMAL" } }
       end
       requests << { addDimensionGroup: { range: { sheetId: sheet_id, dimension: "ROWS", startIndex: top + 1,
                                                   endIndex: top + layout.size - 2 } } }
-      post(":batchUpdate", { requests: })
-      post("/values:batchUpdate", { valueInputOption: "USER_ENTERED", data: block_values(layout, top, year, month) })
+      @sheets.batch(requests)
+      @sheets.write(@tab, block_values(layout, top, year, month))
       @column_ab = nil
       find_block(year, month)
     end
@@ -97,6 +100,7 @@ module Diary
       rows << [:totals]
     end
 
+    # [[ячейки, [[значения]]], ...] — цель на каждый день, формулы недель и месяца
     def block_values(layout, top, year, month)
       norm = @config.norm_seconds(year, month)
       days = Date.new(year, month, -1).day
@@ -105,8 +109,8 @@ module Diary
       subtotal_rows = []
       layout.each_with_index.map do |(kind, arg), i|
         row = top + i
-        next { range: range("H#{row}"), values: [["#{days} #{norm / 3600}ч"]] } if kind == :header
-        next { range: range("A#{row}"), values: [["#{MONTHS[month - 1]} #{year}"]] } if kind == :title
+        next ["H#{row}", [["#{days} #{norm / 3600}ч"]]] if kind == :header
+        next ["A#{row}", [["#{MONTHS[month - 1]} #{year}"]]] if kind == :title
 
         values =
           case kind
@@ -122,44 +126,10 @@ module Diary
             ["ИТОГИ", "", "", "", "=#{subtotal_rows.map { "E#{_1}" }.join('+')}",
              "=#{subtotal_rows.map { "D#{_1}" }.join('+')}", "=#{subtotal_rows.map { "G#{_1}" }.join('+')}"]
           end
-        { range: range("A#{row}:G#{row}"), values: [values] }
+        ["A#{row}:G#{row}", [values]]
       end
     end
 
-    def column_ab = @column_ab ||= get("/values/#{escape(range('A1:B'))}").fetch("values", [])
-
-    def sheet_id
-      @sheet_id ||= get("?fields=sheets.properties(sheetId,title)").fetch("sheets")
-                    .map { _1["properties"] }.find { _1["title"] == @tab }&.fetch("sheetId") ||
-                    raise(Error, "Нет вкладки «#{@tab}»")
-    end
-
-    def grid(row) = { sheetId: sheet_id, startRowIndex: row - 1, endRowIndex: row, startColumnIndex: 0, endColumnIndex: 8 }
-    def range(cells) = "'#{@tab}'!#{cells}"
-    def escape(text) = ERB::Util.url_encode(text)
-
-    def get(path) = request(Net::HTTP::Get, path)
-    def post(path, body) = request(Net::HTTP::Post, path, body)
-
-    def request(klass, path, body = nil)
-      uri = URI("#{API}#{@id}#{path}")
-      req = klass.new(uri)
-      req["Authorization"] = "Bearer #{token}"
-      req["Content-Type"] = "application/json"
-      req.body = JSON.generate(body) if body
-      res = Net::HTTP.start(uri.host, uri.port, use_ssl: true) { _1.request(req) }
-      raise Error, "Google Sheets #{res.code}: #{res.body}" unless res.is_a?(Net::HTTPSuccess)
-
-      JSON.parse(res.body)
-    end
-
-    def token
-      @token ||= begin
-        require "googleauth"
-        File.open(@key_file) do |key|
-          Google::Auth::ServiceAccountCredentials.make_creds(json_key_io: key, scope: SCOPE).fetch_access_token!.fetch("access_token")
-        end
-      end
-    end
+    def column_ab = @column_ab ||= @sheets.values(@tab, "A1:B")
   end
 end

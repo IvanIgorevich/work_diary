@@ -4,3 +4,7 @@ sheet:
   tab: Иван Земчиков
   # Ключ сервисного аккаунта Google с доступом «Редактор» к таблице
   key_file: private/google-key.json
+
+salary:
+  id: идентификатор таблицы зарплаты
+  tab: Иван

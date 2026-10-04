@@ -117,22 +117,38 @@ module Diary
       end
       return unless confirm?("Записать в таблицу времени?")
 
-      Timesheet.new(app.config).write_days(reports)
+      backup = Timesheet.new(app.config).write_days(reports)
       reports.each { app.days.mark(_1.date, "sheet") }
       app.save
-      puts "Готово.", progress_lines(reports.last.date)
+      puts "Готово.#{" Копия вкладки до изменений — скрытая «#{backup}»." if backup}", progress_lines(reports.last.date)
     end
 
     def month
       year, month = (@args.first || (app.today << 1).strftime("%Y-%m")).split("-").map(&:to_i)
-      total = begin
+      sheet_total = begin
         Timesheet.new(app.config).month_total(year, month)
       rescue Error, SystemCallError => e
-        warn "Таблица недоступна (#{e.message}), считаю по журналу."
+        warn "Таблица времени недоступна (#{e.message}), считаю по журналу."
         nil
       end
-      total ||= app.log.between(Date.new(year, month, 1), Date.new(year, month, -1)).sum(&:seconds)
+      total = sheet_total || app.log.between(Date.new(year, month, 1), Date.new(year, month, -1)).sum(&:seconds)
       puts app.month_report(year, month, total)
+      salary(month, total) if sheet_total && app.config.private_setting("salary", "id")
+    end
+
+    # Дата и часы в строке месяца в таблице зарплаты (сумму считает формула)
+    def salary(month, total)
+      salary = Salary.new(app.config)
+      row = salary.row(month) or return puts("\nВ таблице зарплаты нет строки «за #{MONTHS[month - 1].downcase}».")
+      return puts("\nТаблица зарплаты: «#{row.description}» уже заполнена — #{row.hours} ч.") unless row.hours.to_s.strip.empty?
+
+      hours = Salary.hours(total)
+      puts "\nТаблица зарплаты, строка #{row.number} «#{row.description}»: дата #{app.today.strftime('%d.%m.%Y')}, " \
+           "часы #{format('%g', hours)} (итог месяца вверх до четверти часа)"
+      return unless confirm?("Записать?")
+
+      salary.fill(row, hours, app.today)
+      puts "Записано. Перед записью сделана скрытая копия вкладки «Бэкап …»."
     end
 
     def push

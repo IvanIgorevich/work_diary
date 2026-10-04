@@ -145,8 +145,19 @@ RSpec.describe Diary::Timesheet do
     expect(layout.select { _1.first == :subtotal }.map { _1.last.last.day }).to eq([4, 11, 18, 25, 31])
 
     values = timesheet.send(:block_values, layout, 100, 2026, 10)
-    expect(values[2][:values]).to eq([["Четверг", "01.10.2026", "14:00:00", "20:00:00", "=D102-C102-F102", "0:00:00", ""]])
-    expect(values[6][:values]).to eq([["", "", "", "24:00:00", "=SUM(E102:E105)", "", "=E106-D106"]])
-    expect(values.last[:values].first.values_at(0, 4)).to eq(["ИТОГИ", "=E106+E114+E122+E130+E137"])
+    expect(values[0]).to eq(["H100", [["31 186ч"]]])
+    expect(values[2]).to eq(["A102:G102", [["Четверг", "01.10.2026", "14:00:00", "20:00:00", "=D102-C102-F102", "0:00:00", ""]]])
+    expect(values[6]).to eq(["A106:G106", [["", "", "", "24:00:00", "=SUM(E102:E105)", "", "=E106-D106"]]])
+    expect(values.last.last.first.values_at(0, 4)).to eq(["ИТОГИ", "=E106+E114+E122+E130+E137"])
+  end
+end
+
+RSpec.describe Diary::Salary do
+  it "округляет итог месяца вверх до четверти часа, как в прошлых месяцах" do
+    expect(described_class.hours(Diary::Duration.parse("184:48:47"))).to eq(185)
+    expect(described_class.hours(Diary::Duration.parse("185:47:41"))).to eq(186)
+    expect(described_class.hours(Diary::Duration.parse("186:08:26"))).to eq(186.25)
+    expect(described_class.hours(Diary::Duration.parse("232:46:09"))).to eq(233)
+    expect(described_class.hours(Diary::Duration.parse("186:00:00"))).to eq(186)
   end
 end
