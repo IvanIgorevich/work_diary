@@ -120,7 +120,7 @@ module Diary
       backup = Timesheet.new(app.config).write_days(reports)
       reports.each { app.days.mark(_1.date, "sheet") }
       app.save
-      puts "Готово.#{" Копия вкладки до изменений — скрытая «#{backup}»." if backup}", progress_lines(reports.last.date)
+      puts "Готово. Копия таблицы до изменений: #{relative(backup)}", progress_lines(reports.last.date)
     end
 
     def month
@@ -132,8 +132,10 @@ module Diary
         nil
       end
       total = sheet_total || app.log.between(Date.new(year, month, 1), Date.new(year, month, -1)).sum(&:seconds)
-      puts app.month_report(year, month, total)
+      text = app.month_report(year, month, total)
+      puts text
       salary(month, total) if sheet_total && app.config.private_setting("salary", "id")
+      reports_doc(year, month, text) if sheet_total && app.config.private_setting("reports_doc", "id")
     end
 
     # Дата и часы в строке месяца в таблице зарплаты (сумму считает формула)
@@ -147,9 +149,23 @@ module Diary
            "часы #{format('%g', hours)} (итог месяца вверх до четверти часа)"
       return unless confirm?("Записать?")
 
-      salary.fill(row, hours, app.today)
-      puts "Записано. Перед записью сделана скрытая копия вкладки «Бэкап …»."
+      backup = salary.fill(row, hours, app.today)
+      puts "Записано. Копия таблицы до изменений: #{relative(backup)}"
     end
+
+    # Месячный отчёт — в документ «Отчёты», перед планом на первое число следующего месяца
+    def reports_doc(year, month, text)
+      doc = ReportsDoc.new(app.config)
+      return puts("\nДокумент «Отчёты»: отчёт уже есть.") if doc.include?(text.lines[0, 2].join)
+
+      index, place = doc.place_for(year, month)
+      puts "\nДокумент «Отчёты»: вставить отчёт #{place}"
+      return unless confirm?("Вставить?")
+
+      puts "Вставлено. Копия документа до изменений: #{relative(doc.insert(text, index))}"
+    end
+
+    def relative(path) = path.delete_prefix("#{app.config.root}/")
 
     def push
       Dir.chdir(app.config.root) do

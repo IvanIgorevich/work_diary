@@ -13,13 +13,13 @@ module Diary
       @config = config
       id = config.private_setting("sheet", "id") or raise Error, "Нет sheet.id в private/config.yml"
       @tab = config.private_setting("sheet", "tab")
-      @sheets = GoogleSheets.new(id, config.path(config.private_setting("sheet", "key_file") || "private/google-key.json"))
+      @sheets = GoogleSheets.new(id, config)
     end
 
     # Пишет фактические приход, уход и перерыв по дням (DayReport с отрезками времени).
-    # Возвращает имя резервной копии вкладки, если она сделана.
+    # Возвращает путь к локальной копии таблицы до изменений.
     def write_days(reports)
-      backup = @sheets.backup!(@tab)
+      backup = @sheets.backup!
       reports.group_by { [_1.date.year, _1.date.month] }.each do |(year, month), month_reports|
         block = find_block(year, month) || create_block(year, month)
         data = month_reports.flat_map do |report|
