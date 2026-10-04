@@ -213,7 +213,12 @@ module Diary
       return false unless $stdin.tty?
 
       print "#{question} [y/N] "
-      $stdin.gets.to_s.strip.downcase.start_with?("y", "д")
+      answer = $stdin.gets.to_s.strip
+      # «н» — та же клавиша, что «y», в русской раскладке
+      return true if answer.downcase.match?(/\A[yдн]/)
+
+      puts "Ответ #{answer.inspect} — ничего не меняю."
+      false
     end
   end
 end
