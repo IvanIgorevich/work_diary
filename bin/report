@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+require_relative "../lib/diary"
+
+Diary::CLI.new(ARGV).run

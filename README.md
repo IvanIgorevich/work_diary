@@ -1,18 +1,54 @@
-# diary
-Console diary with file saving
+# Рабочий дневник
 
-To run the program, enter the following command in the terminal from the program folder:
-~~~
-$ ruby diary.rb
-~~~
-Press `Enter` to create a new line. After that, editing is only possible in the file.
+Учёт рабочего времени и отчётность: выгрузка трекера → журнал → таблица времени и сообщения в чат.
 
-To save the file, write `end` on a new line and press `Enter`.
+## Как пользоваться
 
-Files are named by the date and time of the save. One file per calendar day.
+1. Время ведётся в трекере. Работа — группа `Ruby › Работа › Domcap`: «А портал» — пункт а) плана дня,
+   «Б портал» — пункт б) и т. д., плюс «Отчётность», «Связь портал», «Документация».
+   Номер задачи можно написать в комментарии записи (`#7386`) — он важнее буквы.
+2. Выгрузку из трекера скачать (Telegram складывает её в `~/Downloads/Telegram Lite/`) или положить в `inbox/`.
+3. Дальше:
 
-Files are stored in the program folder.
+```
+bin/report                     новые выгрузки → журнал, планы, сводка по дням и отклонение от цели
+bin/report telegram            «План — Итог» по неотправленным дням одним сообщением для чата
+bin/report sheet               внести дни в таблицу времени (новый месяц создаётся сам)
+bin/report month [ГГГГ-ММ]     ежемесячный отчёт (по умолчанию — за прошлый месяц)
+bin/report push                коммит и пуш дневника
+bin/report summary С ПО        часы по задачам за период и всего
+```
 
-~~~
-$ ruby summary.rb "2025-10-22" "2026-03-19"
-~~~
+Сегодняшний день не трогается, пока не закончится (`--today`, чтобы включить).
+В Claude Code то же самое делает `/report`.
+
+План дня, если его нет, составляется сам: задачи — по веткам и коммитам в `~/Work/Portal.Domcap`
+(подзадачи сворачиваются по `data/tasks.yml`), остальные пункты — как в предыдущем плане.
+Такой план помечен `auto: true` в `data/days.yml`, его можно поправить руками.
+
+## Что где лежит
+
+| | |
+|---|---|
+| `data/work_log.csv` | все рабочие часы: отрезки из трекера, итоги дня из старого дневника |
+| `data/days.yml` | план на каждый день и отметки: внесён в таблицу (`sheet`), отправлен в чат (`sent`) |
+| `data/tasks.yml` | подзадача → задача, которую указываю в отчётах |
+| `data/telegram_reports.csv` | мои «План/Итог на день» из рабочего чата с 2023 года |
+| `journal/ГГГГ-ММ.md` | планы и итоги по дням, как они ушли в чат (собирается сам) |
+| `config.yml` | цель часов в месяц, разбор трекера, шаблон месячного отчёта |
+| `private/` | вне git: сырые выгрузки трекера, экспорт чата, ключ Google, `config.yml` с таблицей |
+| `records/` | старый дневник (2023–2026), перенесён в `work_log.csv` командой `bin/report migrate-records` |
+
+Репозиторий публичный. Из выгрузки трекера сохраняются только рабочие записи, из чата — только мои отчёты
+текстом; всё остальное лежит в `private/`.
+
+## Доступ к таблице времени
+
+Нужен сервисный аккаунт Google с правом «Редактор» на таблицу:
+
+1. [console.cloud.google.com](https://console.cloud.google.com) → новый проект → включить Google Sheets API.
+2. IAM → Service Accounts → создать аккаунт → Keys → Add key → JSON. Файл положить в `private/google-key.json`.
+3. Открыть доступ к таблице на email аккаунта (`...@....iam.gserviceaccount.com`) как редактору.
+4. `cp config.private.example.yml private/config.yml` и вписать id таблицы.
+
+Gems: `bundle install` (нужен только `googleauth`, для таблицы). Тесты: `rspec`.

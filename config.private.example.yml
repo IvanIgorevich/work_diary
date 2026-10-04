@@ -1,0 +1,6 @@
+# Скопировать в private/config.yml (папка private/ не попадает в git)
+sheet:
+  id: идентификатор таблицы из ссылки docs.google.com/spreadsheets/d/<id>/edit
+  tab: Иван Земчиков
+  # Ключ сервисного аккаунта Google с доступом «Редактор» к таблице
+  key_file: private/google-key.json
