@@ -161,3 +161,12 @@ RSpec.describe Diary::Salary do
     expect(described_class.hours(Diary::Duration.parse("186:00:00"))).to eq(186)
   end
 end
+
+RSpec.describe Diary::DayReport, "уточнения по git" do
+  it "делит запись трекера по времени переключения ветки" do
+    entries = [entry("2026-10-11", "А портал", 20_580, start: "10:27:00", finish: "16:10:00")]
+    assign = [{ "from" => "10:27", "to" => "14:27", "item" => "#7386" }]
+    report = described_class.new(Date.new(2026, 10, 11), entries, ["#7208", "#7386", "отчётность"], config, assign:)
+    expect(report.items).to eq([["#7208", 6180], ["#7386", 14_400]])
+  end
+end

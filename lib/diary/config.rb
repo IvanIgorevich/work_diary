@@ -26,6 +26,7 @@ module Diary
 
     def project = @data.dig("plan", "project")
     def default_items = @data.dig("plan", "default_items")
+    def scheduled_items = @data.dig("plan", "scheduled_items").to_h
 
     def git_repos = @data.dig("git", "repos").map { File.expand_path(_1) }
 

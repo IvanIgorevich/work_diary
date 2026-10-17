@@ -7,11 +7,14 @@ module Diary
   class DayReport
     attr_reader :date, :entries, :plan
 
-    def initialize(date, entries, plan, config)
+    # assign — уточнения по git, когда одна запись трекера захватывает две задачи:
+    # [{"from" => "10:27", "to" => "14:27", "item" => "#7386"}] — это время идёт в указанный пункт.
+    def initialize(date, entries, plan, config, assign: [])
       @date = date
       @entries = entries
       @plan = plan || []
       @config = config
+      @assign = assign || []
     end
 
     def total = entries.sum(&:seconds)
@@ -22,7 +25,12 @@ module Diary
     # [[пункт, секунды], ...] в порядке плана, затем всё, чего в плане не было
     def items
       sums = Hash.new(0)
-      entries.each { sums[resolve(_1.activity)] += _1.seconds }
+      entries.each do |entry|
+        moved = assigned(entry)
+        moved.each { |item, seconds| sums[item] += seconds }
+        sums[resolve(entry.activity)] += entry.seconds - moved.sum(&:last)
+      end
+      sums.delete_if { |_, seconds| seconds.zero? }
       sums.each_with_index.sort_by { |(item, _), i| [plan.index(item) || plan.size, i] }.map(&:first)
     end
 
@@ -40,6 +48,18 @@ module Diary
     end
 
     private
+
+    # [[пункт, секунды], ...] — части отрезка, попавшие в уточнения assign
+    def assigned(entry)
+      return [] unless entry.start && entry.finish
+
+      start = Duration.parse(entry.start)
+      finish = Duration.parse(entry.finish)
+      @assign.filter_map do |rule|
+        overlap = [finish, Duration.parse(rule["to"])].min - [start, Duration.parse(rule["from"])].max
+        [rule["item"], overlap] if overlap.positive?
+      end
+    end
 
     def resolve(activity)
       return activity if activity.start_with?("#")

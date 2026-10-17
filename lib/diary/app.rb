@@ -9,13 +9,20 @@ module Diary
       @days = Days.new(config.path("data/days.yml"))
       @tasks = Tasks.new(config.path("data/tasks.yml"))
       @today = today
+      @pending_export_digests = []
     end
 
     def save
       log.save
       days.save
       write_journal
+      backfill_records
+      rebuild_database
+      save_processed_exports
     end
+
+    def rebuild_database = (@database = Database.new(config)).rebuild
+    def reporting_statuses(date) = (@database ||= Database.new(config)).statuses(date)
 
     def last_day(include_today = false) = include_today ? today : today - 1
 
@@ -25,21 +32,32 @@ module Diary
       log.dates.select { _1.between?(from, to) }
     end
 
-    def report(date) = DayReport.new(date, log.for_date(date), days.plan(date), config)
+    def report(date) = DayReport.new(date, log.for_date(date), days.plan(date), config, assign: days.assign(date))
     def progress = Progress.new(log, config)
+
+    # Дополняет прежние records/*.txt по всем управляемым завершённым дням.
+    # Исторические файлы остаются как были; новые обновляются из CSV/YAML.
+    def backfill_records
+      dates = work_dates
+      reports = dates.map { report(_1) }
+      totals = dates.to_h { |date| [date, summary(date, date).to_h { |item, _, all| [item, all] }] }
+      Records.new(config.path("records"), config.path("data/records_generated.yml")).write(reports, totals:)
+    end
 
     # Новые выгрузки трекера: копия как есть — в private/tracker/, рабочие записи — в журнал.
     def import_exports
       archive = config.path("private/tracker")
       FileUtils.mkdir_p(archive)
-      known = Dir[File.join(archive, "*")].map { Digest::SHA256.file(_1).hexdigest }
+      processed = processed_exports | @pending_export_digests
       config.export_globs.flat_map { Dir[_1] }.uniq.sort_by { File.mtime(_1) }.filter_map do |file|
         digest = Digest::SHA256.file(file).hexdigest
-        next if known.include?(digest)
+        next if processed.include?(digest)
 
-        FileUtils.cp(file, File.join(archive, "#{File.basename(file, '.csv')}-#{digest[0, 8]}.csv"))
-        known << digest
+        archived = File.join(archive, "#{File.basename(file, '.csv')}-#{digest[0, 8]}.csv")
+        FileUtils.cp(file, archived) unless File.exist?(archived)
         import_tracker(file)
+        @pending_export_digests << digest
+        processed << digest
         file
       end
     end
@@ -75,14 +93,26 @@ module Diary
         tasks = git.tasks_on(date)
         tasks = previous.select { _1.start_with?("#") } if tasks.empty?
         rest = previous.reject { _1.start_with?("#") }
-        days.set_plan(date, tasks + (rest.empty? ? config.default_items : rest), auto: true)
+        items = tasks + (rest.empty? ? config.default_items : rest)
+        scheduled = config.scheduled_items
+        items = items.reject { scheduled.key?(_1) && !scheduled[_1].include?(date.cwday) }
+        scheduled.each { |item, weekdays| items << item if weekdays.include?(date.cwday) && !items.include?(item) }
+        days.set_plan(date, items, auto: true)
       end
     end
 
     # Сообщения в чат: «План — Итог» по дням подряд, не длиннее лимита Telegram
-    def telegram_messages(dates, limit: 4000)
+    def telegram_messages(dates, limit: 4000, pending_only: false)
+      sent = pending_only ? sent_report_parts : {}
       dates.each_with_object([]) do |date, messages|
-        day = "#{report(date).plan_text}\n\n#{report(date).result_text}"
+        next if pending_only && days.sent?(date)
+
+        parts = { "plan" => report(date).plan_text,
+                  "result" => report(date).result_text }
+        parts.reject! { |kind, _| sent.fetch(date.to_s, []).include?(kind) }
+        next if parts.empty?
+
+        day = parts.values.join("\n\n")
         if messages.empty? || messages.last.size + day.size + 3 > limit
           messages << day
         else
@@ -118,19 +148,56 @@ module Diary
         csv << %w[date kind sent_at text]
         merged.each { csv << _1.values_at("date", "kind", "sent_at", "text") }
       end
+      rebuild_database
       merged.size - existing.size
     end
 
     private
 
+    def sent_report_parts
+      file = config.path("data/telegram_reports.csv")
+      return {} unless File.exist?(file)
+
+      parts = CSV.read(file, headers: true).group_by { _1["date"] }
+                 .transform_values { _1.map { |row| row["kind"] }.uniq }
+      days.dates.each { |date| parts[date.to_s] = parts.fetch(date.to_s, []) | days.sent_parts(date) }
+      parts
+    end
+
+    def processed_exports
+      file = config.path("private/imported_exports.yml")
+      File.exist?(file) ? (YAML.load_file(file) || {}).fetch("sha256", []) : []
+    end
+
+    def save_processed_exports
+      return if @pending_export_digests.empty?
+
+      file = config.path("private/imported_exports.yml")
+      digests = (processed_exports | @pending_export_digests).sort
+      Tempfile.create(["imported_exports-", ".yml"], File.dirname(file)) do |temp|
+        temp.write(YAML.dump("sha256" => digests))
+        temp.close
+        File.rename(temp.path, file)
+      end
+      @pending_export_digests.clear
+    end
+
     def write_journal
       from = days.first_date or return
       journal = Journal.new(config.path("journal"))
-      (from..last_day).map { [_1.year, _1.month] }.uniq.each do |year, month|
+      planned_dates = days.dates.select do |date|
+        date <= today && days.plan(date) && (date == today || log.for_date(date).empty?)
+      end
+      months = (from..last_day).map { [_1.year, _1.month] }.uniq
+      months |= planned_dates.map { [_1.year, _1.month] }
+      months.each do |year, month|
+        month_start = Date.new(year, month, 1)
         to = [Date.new(year, month, -1), last_day].min
         reports = work_dates(to).select { _1.year == year && _1.month == month }.map { report(_1) }
-        legacy_until = log.between(Date.new(year, month, 1), to).select { _1.source == "diary" }.map(&:date).max
-        journal.write(year, month, reports, progress.month(to), legacy_until:)
+        legacy_until = log.between(month_start, to).select { _1.source == "diary" }.map(&:date).max
+        planned_reports = planned_dates.select { _1.year == year && _1.month == month }.map { report(_1) }
+        totals = to >= month_start ? progress.month(to) : nil
+        journal.write(year, month, reports, totals, legacy_until:, planned_reports:)
       end
     end
   end

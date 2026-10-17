@@ -5,8 +5,10 @@ module Diary
   class LegacyRecords
     LINE = %r{\A\d+\)\s*(.*?)\bthis day(?:/total)?\s+(\d+h(?:\s*\d+m)?|\d+m|\d{1,2}:\d{2})\b}
 
-    def initialize(dir)
+    # generated — сгенерированные из data/ файлы (data/records_generated.yml): они не архив
+    def initialize(dir, generated: {})
       @dir = dir
+      @generated = generated
     end
 
     def entries
@@ -29,12 +31,17 @@ module Diary
       end
     end
 
+    def dates = blocks.map(&:first).uniq.sort
+
     private
 
     def blocks
       @blocks ||= Dir[File.join(@dir, "*.txt")].sort.flat_map do |file|
+        text = File.read(file, encoding: "UTF-8").delete("\r")
+        next [] if @generated[File.basename(file)] == Records.digest(text) || text.start_with?(Records::OLD_MARKER)
+
         saved = Date.parse(File.basename(file, ".txt"))
-        File.read(file, encoding: "UTF-8").delete("\r").split(/^(\d{4}-\d{2}-\d{2}):[ \t]*$/).drop(1)
+        text.split(/^(\d{4}-\d{2}-\d{2}):[ \t]*$/).drop(1)
             .each_slice(2).map { |date, body| [work_date(Date.parse(date), saved), body.to_s.lines.map(&:strip)] }
       end
     end

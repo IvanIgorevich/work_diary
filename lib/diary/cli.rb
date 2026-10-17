@@ -7,10 +7,13 @@ module Diary
       bin/report month [ГГГГ-ММ]     ежемесячный отчёт (по умолчанию — за прошлый месяц)
       bin/report push                коммит и пуш дневника
       bin/report summary С ПО        часы по задачам за период
+      bin/report db                  пересобрать SQLite из CSV/YAML (источники не меняются)
       bin/report import-chat ПАПКА   сохранить экспорт чата Telegram
       bin/report migrate-records     перенести старые records/*.txt в журнал
+      bin/report backfill-records    дополнить прежние записи по завершённым дням
 
         --today            включить сегодняшний (незаконченный) день
+        --plan-today       в конце сообщения для чата — план на сегодня (без итога)
         --from ДАТА        с какого дня (для сводки, telegram, sheet)
         --to ДАТА          по какой день
         --city ГОРОД       город для сообщения коммита (по умолчанию — из прошлого коммита)
@@ -22,6 +25,7 @@ module Diary
       @args = OptionParser.new do |o|
         o.banner = USAGE
         o.on("--today") { @options[:today] = true }
+        o.on("--plan-today") { @options[:plan_today] = true }
         o.on("--from DATE") { @options[:from] = Date.parse(_1) }
         o.on("--to DATE") { @options[:to] = Date.parse(_1) }
         o.on("--city CITY") { @options[:city] = _1 }
@@ -38,8 +42,10 @@ module Diary
       when "month" then month
       when "push" then push
       when "summary" then summary
+      when "db" then database
       when "import-chat" then import_chat
       when "migrate-records" then migrate_records
+      when "backfill-records" then backfill_records
       else abort USAGE
       end
     rescue Error => e
@@ -57,9 +63,9 @@ module Diary
       app.save
       puts "Импортировано: #{imported.map { File.basename(_1) }.join(', ')}\n\n" if imported.any?
 
-      shown = @options[:from] ? dates.select { _1 >= @options[:from] } : dates.reject { app.days.sent?(_1) && app.days.in_sheet?(_1) }
+      shown = @options[:from] ? dates.select { _1 >= @options[:from] } : dates.reject { app.reporting_statuses(_1).values.all? { |status| status == "done" } }
       if shown.empty?
-        puts "Все дни внесены в таблицу и отправлены в чат."
+        puts "Все четыре части отчётности завершены."
       else
         shown.each { puts day_line(_1) }
         auto = shown.select { app.days.auto_plan?(_1) }
@@ -72,7 +78,9 @@ module Diary
       report = app.report(date)
       span = report.came ? "#{report.came[0, 5]}–#{report.left[0, 5]}" : "     —     "
       items = report.items.map { |item, seconds| "#{item} #{Duration.hm(seconds)}" }.join(" · ")
-      flags = [app.days.in_sheet?(date) ? "таблица ✓" : "таблица ✗", app.days.sent?(date) ? "чат ✓" : "чат ✗"]
+      labels = { "document" => "документ", "chat" => "чат", "sheet" => "таблица", "diary" => "дневник" }
+      symbols = { "done" => "✓", "partial" => "частично", "pending" => "✗", "unknown" => "?" }
+      flags = app.reporting_statuses(date).map { |channel, status| "#{labels.fetch(channel)} #{symbols.fetch(status)}" }
       flags << "план авто" if app.days.auto_plan?(date)
       flags << "непонятно: #{report.unresolved.join(', ')}" if report.unresolved.any?
       format("%-9s %9s  %-11s  %s   [%s]", report.title, Duration.hms(report.total), span, items, flags.join(", "))
@@ -92,7 +100,13 @@ module Diary
       unresolved = dates.select { app.report(_1).unresolved.any? }
       abort "Сначала поправьте план (data/days.yml) для: #{unresolved.map { _1.strftime('%d.%m') }.join(', ')}" if unresolved.any?
 
-      messages = app.telegram_messages(dates)
+      messages = app.telegram_messages(dates, pending_only: true)
+      if @options[:plan_today] && app.days.plan(app.today) && !app.days.sent_parts(app.today).include?("plan")
+        today = app.report(app.today).plan_text
+        messages.empty? || messages.last.size + today.size + 3 > 4000 ? messages << today : messages.last << "\n\n\n" << today
+      end
+      return puts("Все части отчётов уже отправлены.") if messages.empty?
+
       messages.each_with_index do |text, i|
         puts "----- сообщение #{i + 1} из #{messages.size} -----" if messages.size > 1
         puts text, ""
@@ -100,6 +114,7 @@ module Diary
       return unless confirm?("Отметить #{dates.size} дн. как отправленные?")
 
       dates.each { app.days.mark(_1, "sent") }
+      app.days.mark_sent_part(app.today, "plan") if @options[:plan_today] && app.days.plan(app.today)
       app.save
     end
 
@@ -167,6 +182,10 @@ module Diary
 
     def relative(path) = path.delete_prefix("#{app.config.root}/")
 
+    def database
+      puts "База пересобрана: #{relative(app.rebuild_database)}"
+    end
+
     def push
       Dir.chdir(app.config.root) do
         system("git", "add", "data", "journal", exception: true)
@@ -207,13 +226,27 @@ module Diary
     end
 
     def migrate_records
-      legacy = LegacyRecords.new(app.config.path("records"))
-      entries = legacy.entries
+      manifest = app.config.path("data/records_generated.yml")
+      generated = File.exist?(manifest) ? YAML.load_file(manifest) || {} : {}
+      legacy = LegacyRecords.new(app.config.path("records"), generated:)
+      # Даже архивы не добавляются поверх более точного CSV/трекера той же даты.
+      covered = app.log.entries.reject { _1.source == "diary" }.map(&:date).uniq
+      entries = legacy.entries.reject { covered.include?(_1.date) }
       app.log.replace_source("diary", entries)
       app.log.save
+      app.rebuild_database
       puts "Перенесено #{entries.size} записей за #{entries.map(&:date).uniq.size} дн., " \
            "всего #{Duration.hms(entries.sum(&:seconds))}"
       puts "Не разобрано (оставлено в records/):", legacy.skipped.map { "  #{_1}" } if legacy.skipped.any?
+    end
+
+    def backfill_records
+      result = app.backfill_records
+      puts "Записано #{result.written.size} дн., актуальных #{result.unchanged.size}, " \
+           "архивов сохранено #{result.preserved.size}."
+      if result.conflicts.any?
+        puts "Архив занимает имя файла, оставлен без изменений: #{result.conflicts.map(&:to_s).join(', ')}"
+      end
     end
 
     # Дни для telegram/sheet: явный диапазон или все, что ещё не сделаны
