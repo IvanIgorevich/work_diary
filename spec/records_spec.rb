@@ -30,7 +30,7 @@ RSpec.describe "Прежние ежедневные записи" do
     app.log.replace_day(app.today, [entry(app.today.to_s, "А портал", 999)])
   end
 
-  it "автоматически дополняет завершённые дни в прежнем формате со всеми работами и точными секундами" do
+  it "пишет в прежний формат только номера задач, сохраняя остальные часы в полной отчётности" do
     app.save
     first = File.read(record(day))
     second = File.read(record(day + 1))
@@ -38,12 +38,12 @@ RSpec.describe "Прежние ежедневные записи" do
     expect(File.binread(app.config.path("records/2026-09-21.txt"))).to eq(old_text)
     expect(first).to start_with("\n2026-09-21:\n")
     expect(first.lines.grep(/\A# /)).to be_empty
-    expect(first).to include("2026-09-21:\n1) #6077, this day 4h 54m 19s, total 10h 54m 19s",
-                            "2) отчётность, this day 15m, total recorded 15m",
-                            "3) документация, this day 15m 47s, total recorded 15m 47s")
-    expect(first).not_to include("связь с командой, this day")
-    expect(second).to include("2026-09-22:\n1) #6077, this day 1h, total 11h 54m 19s",
-                             "2) связь с командой, this day 1m 1s, total recorded 1m 1s")
+    expect(first).to include("2026-09-21:\n1) #6077, this day 4h 54m 19s, total 10h 54m 19s")
+    expect(second).to include("2026-09-22:\n1) #6077, this day 1h, total 11h 54m 19s")
+    expect(first + second).not_to match(/отчётность|связь с командой|документация|total recorded/)
+    expect(app.report(day).items.to_h).to include("отчётность" => 900, "документация" => 947)
+    expect(app.report(day + 1).items.to_h).to include("связь с командой" => 61)
+    expect(File.read(app.config.path("journal/2026-09.md"))).to include("отчётность 00:15", "связь с командой 00:01")
     expect(File).not_to exist(record(app.today))
     generated = YAML.load_file(app.config.path("data/records_generated.yml"))
     expect(generated.keys).to eq(["2026-09-22.txt", "2026-09-23.txt"])
@@ -81,14 +81,15 @@ RSpec.describe "Прежние ежедневные записи" do
     expect(File.read(app.config.path("records/2026-09-23.txt"))).to eq(existing)
   end
 
-  it "не создаёт записей без фактов и сохраняет неизвестные задачи как неразобранные вместо выдуманного номера" do
+  it "не выдумывает номера для неразобранных записей и сохраняет их в исходных данных" do
     app.days.set_plan(day + 2, ["#6077", "отчётность"])
     app.days.set_plan(day + 3, ["отчётность"])
     app.log.replace_day(day + 3, [entry((day + 3).to_s, "Б портал", 17)])
     app.backfill_records
 
     expect(File).not_to exist(record(day + 2))
-    expect(File.read(record(day + 3))).to include("1) ? Б портал, this day 17s, total recorded 17s")
+    expect(File.read(record(day + 3))).not_to include("this day", "? Б портал")
+    expect(app.report(day + 3).items).to eq([["? Б портал", 17]])
   end
 
   it "migrate-records не дублирует производные дни и не добавляет архив поверх более точных данных" do

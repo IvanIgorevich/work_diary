@@ -5,5 +5,4 @@
 1) #6423, this day 1h, total 6h
 2) #7241, this day 3h, total 3h
 3) #7462, this day 3h, total 3h
-4) связь с командой, this day 30m, total recorded 30m
 ------------------------------

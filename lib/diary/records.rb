@@ -1,6 +1,7 @@
 module Diary
   # Ежедневная текстовая версия прежнего дневника — в том же виде, что писал diary.rb:
-  # время, рабочая дата, строки задач, разделитель. Какие файлы сгенерированы из data/,
+  # время, рабочая дата, только номерные задачи и их часы, разделитель.
+  # Служебные активности остаются в CSV, журнале и БД. Файлы, сгенерированные из data/,
   # записано отдельно, в data/records_generated.yml (имя файла → SHA-256 содержимого):
   # такие файлы можно перезаписывать и нельзя повторно мигрировать как рабочие часы.
   class Records
@@ -63,9 +64,8 @@ module Diary
     def render(report, totals)
       head = report.left ? "\n\r#{report.left[0, 5]}\n\r\n" : "\n"
       lines = ["#{report.date}:"]
-      report.items.each_with_index do |(item, seconds), index|
-        total_label = item.start_with?("#") ? "total" : "total recorded"
-        lines << "#{index + 1}) #{item}, this day #{duration(seconds)}, #{total_label} #{duration(totals.fetch(item))}"
+      report.items.select { |item, _| item.match?(/\A#\d+\z/) }.each_with_index do |(item, seconds), index|
+        lines << "#{index + 1}) #{item}, this day #{duration(seconds)}, total #{duration(totals.fetch(item))}"
       end
       head + lines.push("------------------------------", "").join("\n")
     end

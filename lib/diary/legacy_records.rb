@@ -37,9 +37,11 @@ module Diary
 
     def blocks
       @blocks ||= Dir[File.join(@dir, "*.txt")].sort.flat_map do |file|
-        text = File.read(file, encoding: "UTF-8").delete("\r")
+        text = File.read(file, encoding: "UTF-8")
         next [] if @generated[File.basename(file)] == Records.digest(text) || text.start_with?(Records::OLD_MARKER)
 
+        # SHA в манифесте рассчитан по исходному файлу, включая прежние CR.
+        text = text.delete("\r")
         saved = Date.parse(File.basename(file, ".txt"))
         text.split(/^(\d{4}-\d{2}-\d{2}):[ \t]*$/).drop(1)
             .each_slice(2).map { |date, body| [work_date(Date.parse(date), saved), body.to_s.lines.map(&:strip)] }

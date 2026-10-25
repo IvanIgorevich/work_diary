@@ -4,5 +4,4 @@
 2026-10-09:
 1) #7208, this day 8h 59m 30s, total 36h 46m 30s
 2) #7509, this day 30m, total 30m
-3) связь с командой, this day 25m 57s, total recorded 1h 40m 57s
 ------------------------------

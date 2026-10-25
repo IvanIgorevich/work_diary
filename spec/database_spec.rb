@@ -67,6 +67,46 @@ RSpec.describe Diary::Database do
     expect(source_bytes).to eq(original_sources)
   end
 
+  it "считает задачи по уточнениям assign как отчёт дня, сохраняя исходные отрезки без повторов" do
+    first = Date.new(2026, 10, 11)
+    second = Date.new(2026, 10, 15)
+    app.days.set_plan(first, ["#7208", "#7386", "отчётность"])
+    app.days.mark(first, "assign", [{ "from" => "10:27", "to" => "14:27", "item" => "#7386" }])
+    app.log.replace_day(first, [entry(first.to_s, "А портал", 20_580, start: "10:27:00", finish: "16:10:00")])
+    app.days.set_plan(second, ["#7208", "#7516", "отчётность"])
+    app.days.mark(second, "assign", [{ "from" => "14:29", "to" => "15:25", "item" => "#7208" }])
+    app.log.replace_day(second, [entry(second.to_s, "А портал", 9_780, start: "11:46:00", finish: "14:29:00"),
+                                entry(second.to_s, "Б портал", 7_200, start: "14:29:00", finish: "16:29:00"),
+                                entry(second.to_s, "Б портал", 3_600, start: "17:10:00", finish: "18:10:00"),
+                                entry(second.to_s, "Б портал", 4_740, start: "20:40:00", finish: "21:59:00"),
+                                entry(second.to_s, "Связь портал", 462)])
+    app.log.save
+    app.days.save
+    sources = source_bytes
+
+    2.times do
+      database.rebuild
+      expect(rows("SELECT * FROM report_totals WHERE date >= '2026-10-11' ORDER BY date, report_task")).to eq(
+        [{ "date" => first.to_s, "report_task" => "#7208", "duration_seconds" => 6_180 },
+         { "date" => first.to_s, "report_task" => "#7386", "duration_seconds" => 14_400 },
+         { "date" => second.to_s, "report_task" => "#7208", "duration_seconds" => 13_140 },
+         { "date" => second.to_s, "report_task" => "#7516", "duration_seconds" => 12_180 },
+         { "date" => second.to_s, "report_task" => "связь с командой", "duration_seconds" => 462 }]
+      )
+      [first, second].each do |date|
+        totals = rows("SELECT report_task, duration_seconds FROM report_totals WHERE date = '#{date}'")
+                   .to_h { [_1.fetch("report_task"), _1.fetch("duration_seconds")] }
+        expect(totals).to eq(app.report(date).items.to_h)
+        expect(rows("SELECT start, \"end\", duration_seconds, activity FROM work_entries WHERE date = '#{date}' ORDER BY id")).to match_array(
+          app.log.for_date(date).map do |entry|
+            { "start" => entry.start, "end" => entry.finish, "duration_seconds" => entry.seconds, "activity" => entry.activity }
+          end
+        )
+      end
+      expect(source_bytes).to eq(sources)
+    end
+  end
+
   it "заменяет прежнюю копию актуальными строками и не хранит частные настройки" do
     app.save
     File.write(app.config.path("private/config.yml"), YAML.dump("secret" => "test-private-token"))

@@ -31,6 +31,12 @@ module Diary
         source TEXT NOT NULL,
         report_task TEXT NOT NULL
       );
+      CREATE TABLE entry_allocations (
+        entry_id INTEGER NOT NULL REFERENCES work_entries(id),
+        report_task TEXT NOT NULL,
+        duration_seconds INTEGER NOT NULL CHECK (duration_seconds >= 0),
+        PRIMARY KEY (entry_id, report_task)
+      );
       CREATE TABLE task_parents (
         task TEXT PRIMARY KEY,
         report_task TEXT NOT NULL
@@ -52,9 +58,10 @@ module Diary
       CREATE INDEX work_entries_date_task ON work_entries(date, report_task);
       CREATE INDEX telegram_reports_date_kind ON telegram_reports(date, kind);
       CREATE VIEW report_totals AS
-        SELECT date, report_task, SUM(duration_seconds) AS duration_seconds
-        FROM work_entries GROUP BY date, report_task;
-      PRAGMA user_version = 1;
+        SELECT entries.date, allocations.report_task, SUM(allocations.duration_seconds) AS duration_seconds
+        FROM work_entries AS entries JOIN entry_allocations AS allocations ON allocations.entry_id = entries.id
+        GROUP BY entries.date, allocations.report_task;
+      PRAGMA user_version = 2;
     SQL
 
     attr_reader :path
@@ -101,6 +108,7 @@ module Diary
       dates = (log.dates + day_data.keys.map { Date.parse(_1) } + telegram.map { Date.parse(_1.fetch("date")) }).uniq.sort
       sent_reports = telegram.group_by { _1["date"] }
       statements = [SCHEMA]
+      entry_id = 0
 
       dates.each do |date|
         entries = log.for_date(date)
@@ -117,8 +125,14 @@ module Diary
           [activity, DayReport.new(date, [sample], report.plan, @config).items.first.first]
         end
         entries.each do |entry|
-          statements << insert("work_entries", [nil, date.to_s, entry.start, entry.finish,
+          entry_id += 1
+          statements << insert("work_entries", [entry_id, date.to_s, entry.start, entry.finish,
                                                 entry.seconds, entry.activity, entry.source, resolved.fetch(entry.activity)])
+          # Исходный отрезок не делим: разбивка задач по assign хранится отдельно,
+          # тем же механизмом, что и в каноническом отчёте дня.
+          DayReport.new(date, [entry], report.plan, @config, assign: days.assign(date)).items.each do |item, seconds|
+            statements << insert("entry_allocations", [entry_id, item, seconds])
+          end
         end
         reporting_statuses(date, attributes, days.first_date, sent_reports[date.to_s]).each do |channel, status, marked_at|
           statements << insert("reporting_statuses", [date.to_s, channel, status, marked_at])
