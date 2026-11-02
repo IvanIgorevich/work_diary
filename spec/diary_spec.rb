@@ -30,6 +30,22 @@ RSpec.describe Diary::TrackerExport do
   it "знает, какие дни покрыты целиком" do
     expect(export.complete_dates).to eq([Date.new(2026, 10, 2)])
   end
+
+  it "читает повторно сохранённую CSV с пустыми полями-разделителями и переносами внутри комментария" do
+    original = CSV.read(File.join(FIXTURES, "tracker.csv"))
+    original.find { _1[7].to_s.include?("#7001") }[7] = "#7001 правки\n\nпродолжение комментария"
+    Dir.mktmpdir do |dir|
+      file = File.join(dir, "reexport.csv")
+      [false, true].product([nil, " \t "]).each do |force_quotes, blank|
+        rows = original.map { |cells| cells.empty? ? Array.new(8, blank) : cells + Array.new(8 - cells.size) }
+        File.write(file, CSV.generate(force_quotes:) { |csv| rows.each { csv << _1 } })
+        converted = described_class.new(file, work_groups: %w[Ruby Работа Domcap])
+
+        expect(converted.entries).to eq(export.entries)
+        expect([converted.from, converted.to]).to eq([export.from, export.to])
+      end
+    end
+  end
 end
 
 RSpec.describe Diary::DayReport do

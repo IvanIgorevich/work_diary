@@ -67,7 +67,18 @@ module Diary
       export = TrackerExport.new(file, work_groups: config.work_groups)
       return if export.empty?
 
-      fresh = export.entries.group_by(&:date)
+      excluded = tracker_exclusions(file)
+      excluded.map(&:first).uniq.each do |date|
+        date = Date.parse(date)
+        existing = log.for_date(date)
+        kept = existing.reject do |entry|
+          entry.source == "tracker" && excluded.include?([entry.date.to_s, entry.start, entry.finish, entry.activity])
+        end
+        log.replace_day(date, kept) if kept.size < existing.size
+      end
+      fresh = export.entries.reject do |entry|
+        excluded.include?([entry.date.to_s, entry.start, entry.finish, entry.activity])
+      end.group_by(&:date)
       complete = export.complete_dates
       (export.from.to_date..export.to.to_date).each do |date|
         if complete.include?(date)
@@ -153,6 +164,17 @@ module Diary
     end
 
     private
+
+    # Подтверждённые исправления конкретной выгрузки; исходный CSV остаётся как есть.
+    # Исключения применяются после разрезания переходящих через полночь отрезков.
+    def tracker_exclusions(file)
+      path = config.path("private/tracker_corrections.yml")
+      return [] unless File.exist?(path)
+
+      corrections = YAML.load_file(path) || {}
+      export = corrections.fetch("exports", {}).fetch(Digest::SHA256.file(file).hexdigest, {})
+      export.fetch("exclude", []).map { _1.values_at("date", "start", "end", "activity") }
+    end
 
     def sent_report_parts
       file = config.path("data/telegram_reports.csv")

@@ -19,6 +19,7 @@ tracker:
     Связь портал: связь с командой
     Документация: документация
     Анализ: analysis
+    'Review ': review
 
 plan:
   project: Domcap

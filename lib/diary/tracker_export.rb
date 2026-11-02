@@ -41,9 +41,7 @@ module Diary
 
     # Первая таблица файла — отрезки; после пустой строки идёт сводка, она не нужна.
     def parse(text)
-      CSV.parse(text.split(/\r?\n[ \t]*\r?\n/, 2).first).drop(1).filter_map do |cells|
-        next if cells.compact.empty?
-
+      CSV.parse(text).drop(1).take_while { |cells| cells.any? { !_1.to_s.strip.empty? } }.map do |cells|
         Row.new(cells[0, 3].map(&:to_s).reject(&:empty?), cells[3], cells[7].to_s,
                 Time.strptime(cells[5], TIME_FORMAT), Time.strptime(cells[6], TIME_FORMAT))
       end
